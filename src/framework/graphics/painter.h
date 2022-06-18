@@ -151,6 +151,8 @@ protected:
 
     friend class DrawPool;
     friend class Pool;
+    friend struct DrawMethod;
+    friend struct DrawObject;
 };
 
 extern Painter* g_painter;

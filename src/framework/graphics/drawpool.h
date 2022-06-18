@@ -38,7 +38,8 @@ public:
     void use(PoolType type, const Rect& dest, const Rect& src, const Color& colorClear = Color::alpha);
 
     void addTexturedRect(const Rect& dest, const TexturePtr& texture, const Color& color = Color::white);
-    void addTexturedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Color& color = Color::white, const Point& originalDest = {}, const DrawBufferPtr drawQueue = nullptr);
+    void addTexturedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Color& color = Color::white, const DrawBufferPtr drawQueue = nullptr);
+    void addTexturedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Point& originalDest, const Color& color = Color::white, const DrawBufferPtr drawQueue = nullptr);
     void addUpsideDownTexturedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Color& color = Color::white);
     void addTexturedRepeatedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Color& color = Color::white);
     void addFilledRect(const Rect& dest, const Color& color = Color::white);
@@ -69,13 +70,12 @@ private:
     void draw();
     void init();
     void terminate();
-    void drawObject(Pool::DrawObject& obj);
+    void drawObject(DrawObject& obj);
 
     CoordsBuffer m_coordsBuffer;
     std::array<Pool*, static_cast<uint8_t>(PoolType::UNKNOW) + 1> m_pools{};
 
     Pool* m_currentPool{ nullptr };
-
     Painter::PainterState NULL_STATE;
 
     friend class GraphicalApplication;

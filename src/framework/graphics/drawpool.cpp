@@ -56,7 +56,7 @@ void DrawPool::draw()
             for (auto& obj : pool->m_objects)
                 drawObject(obj);
             pf->m_framebuffer->release();
-        }
+        } else pool->free();
     }
 
     // Draw
@@ -79,7 +79,7 @@ void DrawPool::draw()
     }
 }
 
-void DrawPool::drawObject(Pool::DrawObject& obj)
+void DrawPool::drawObject(DrawObject& obj)
 {
     if (obj.action) {
         obj.action();
@@ -91,8 +91,9 @@ void DrawPool::drawObject(Pool::DrawObject& obj)
 
     if (useGlobalCoord) {
         if (obj.drawMethods.empty()) return;
-        for (const auto& method : obj.drawMethods) {
-            m_currentPool->addCoords(method, buffer, obj.drawMode);
+        for (const auto* method : obj.drawMethods) {
+            method->add(buffer, obj.drawMode);
+            delete method;
         }
     }
 
@@ -122,21 +123,26 @@ void DrawPool::drawObject(Pool::DrawObject& obj)
 
 void DrawPool::addTexturedRect(const Rect& dest, const TexturePtr& texture, const Color& color)
 {
+    if (dest.isEmpty())
+        return;
+
     addTexturedRect(dest, texture, Rect(Point(), texture->getSize()), color);
 }
 
-void DrawPool::addTexturedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Color& color, const Point& originalDest, DrawBufferPtr drawQueue)
+void DrawPool::addTexturedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Color& color, DrawBufferPtr drawQueue)
+{
+    if (dest.isEmpty())
+        return;
+
+    m_currentPool->add(color, texture, new DrawRect(dest, src), DrawMode::TRIANGLE_STRIP, drawQueue);
+}
+
+void DrawPool::addTexturedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Point& originalDest, const Color& color, DrawBufferPtr drawQueue)
 {
     if (dest.isEmpty() || src.isEmpty())
         return;
 
-    const Pool::DrawMethod method{
-        .type = Pool::DrawMethodType::RECT,
-        .rects = std::make_pair(dest, src),
-        .dest = originalDest
-    };
-
-    m_currentPool->add(color, texture, method, DrawMode::TRIANGLE_STRIP, drawQueue);
+    m_currentPool->add(color, texture, new DrawTextureRect(dest, src, originalDest), DrawMode::TRIANGLE_STRIP, drawQueue);
 }
 
 void DrawPool::addUpsideDownTexturedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Color& color)
@@ -144,9 +150,7 @@ void DrawPool::addUpsideDownTexturedRect(const Rect& dest, const TexturePtr& tex
     if (dest.isEmpty() || src.isEmpty())
         return;
 
-    const Pool::DrawMethod method{ Pool::DrawMethodType::UPSIDEDOWN_RECT, std::make_pair(dest, src) };
-
-    m_currentPool->add(color, texture, method, DrawMode::TRIANGLE_STRIP);
+    m_currentPool->add(color, texture, new DrawUpsideDown(dest, src), DrawMode::TRIANGLE_STRIP);
 }
 
 void DrawPool::addTexturedRepeatedRect(const Rect& dest, const TexturePtr& texture, const Rect& src, const Color& color)
@@ -154,9 +158,7 @@ void DrawPool::addTexturedRepeatedRect(const Rect& dest, const TexturePtr& textu
     if (dest.isEmpty() || src.isEmpty())
         return;
 
-    const Pool::DrawMethod method{ Pool::DrawMethodType::REPEATED_RECT,std::make_pair(dest, src) };
-
-    m_currentPool->add(color, texture, method);
+    m_currentPool->add(color, texture, new DrawRepatedRects(dest, src));
 }
 
 void DrawPool::addFilledRect(const Rect& dest, const Color& color)
@@ -164,9 +166,7 @@ void DrawPool::addFilledRect(const Rect& dest, const Color& color)
     if (dest.isEmpty())
         return;
 
-    const Pool::DrawMethod method{ Pool::DrawMethodType::RECT,std::make_pair(dest, Rect()) };
-
-    m_currentPool->add(color, nullptr, method);
+    m_currentPool->add(color, nullptr, new DrawFilledRect(dest));
 }
 
 void DrawPool::addFilledTriangle(const Point& a, const Point& b, const Point& c, const Color& color)
@@ -174,9 +174,7 @@ void DrawPool::addFilledTriangle(const Point& a, const Point& b, const Point& c,
     if (a == b || a == c || b == c)
         return;
 
-    const Pool::DrawMethod method{ .type = Pool::DrawMethodType::TRIANGLE, .points = std::make_tuple(a, b, c) };
-
-    m_currentPool->add(color, nullptr, method);
+    m_currentPool->add(color, nullptr, new DrawTriangle(a, b, c));
 }
 
 void DrawPool::addBoundingRect(const Rect& dest, const Color& color, int innerLineWidth)
@@ -184,18 +182,12 @@ void DrawPool::addBoundingRect(const Rect& dest, const Color& color, int innerLi
     if (dest.isEmpty() || innerLineWidth == 0)
         return;
 
-    const Pool::DrawMethod method{
-        .type = Pool::DrawMethodType::BOUNDING_RECT,
-        .rects = std::make_pair(dest, Rect()),
-        .intValue = static_cast<uint16_t>(innerLineWidth)
-    };
-
-    m_currentPool->add(color, nullptr, method);
+    m_currentPool->add(color, nullptr, new DrawBoundingRect(dest, innerLineWidth));
 }
 
 void DrawPool::addAction(std::function<void()> action)
 {
-    m_currentPool->m_objects.push_back(Pool::DrawObject{ .state = NULL_STATE,.action = std::move(action) });
+    m_currentPool->m_objects.push_back(DrawObject{ .state = NULL_STATE,.action = std::move(action) });
 }
 
 void DrawPool::use(const PoolType type)

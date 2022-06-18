@@ -1073,6 +1073,9 @@
     <ClInclude Include="..\src\framework\graphics\hardwarebuffer.h">
       <Filter>Header Files\framework\graphics</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\framework\graphics\drawmethod.h">
+      <Filter>Header Files\framework\graphics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\src\otcicon.rc">

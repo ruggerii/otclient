@@ -45,13 +45,16 @@ Pool* Pool::create(const PoolType type)
     return pool;
 }
 
-void Pool::add(const Color& color, const TexturePtr& texture, const DrawMethod& method, const DrawMode drawMode, DrawBufferPtr drawBuffer)
+void Pool::add(const Color& color, const TexturePtr& texture, const DrawMethod* method, const DrawMode drawMode, DrawBufferPtr drawBuffer)
 {
     const auto& state = Painter::PainterState{
        g_painter->getTransformMatrixRef(), color, m_state.opacity,
        m_state.compositionMode, m_state.blendEquation,
        m_state.clipRect, texture, m_state.shaderProgram
     };
+
+    if (state.shaderProgram)
+        m_autoUpdate = true;
 
     size_t stateHash = 0, methodHash = 0;
     updateHash(state, method, stateHash, methodHash);
@@ -62,39 +65,37 @@ void Pool::add(const Color& color, const TexturePtr& texture, const DrawMethod& 
         auto& pointer = m_drawObjectPointer;
         if (auto it = pointer.find(stateHash); it != pointer.end()) {
             auto& buffer = list[it->second].buffer;
-            if (!buffer->isValid())
-                return;
+            if (buffer->isValid()) {
+                auto& hashList = buffer->m_hashs;
+                if (++buffer->m_i == hashList.size()) {
+                    hashList.push_back(methodHash);
+                    method->add(*buffer->m_coords, DrawMode::TRIANGLES);
+                } else if (hashList[buffer->m_i] != methodHash) {
+                    buffer->invalidate();
+                }
+            }
+        } else {
+            pointer[stateHash] = list.size();
 
-            auto& hashList = buffer->m_hashs;
-            if (++buffer->m_i == hashList.size()) {
-                hashList.push_back(methodHash);
-                addCoords(method, *buffer->m_coords, DrawMode::TRIANGLES);
-            } else if (hashList[buffer->m_i] != methodHash) {
-                buffer->invalidate();
+            if (!drawBuffer) {
+                drawBuffer = std::make_shared<DrawBuffer>();
             }
 
-            return;
+            if (drawBuffer->m_hashs.empty()) {
+                if (drawBuffer->m_coords)
+                    drawBuffer->m_coords->clear();
+                else
+                    drawBuffer->m_coords = std::make_shared<CoordsBuffer>();
+
+                drawBuffer->m_hashs.push_back(methodHash);
+                method->add(*drawBuffer->m_coords, DrawMode::TRIANGLES);
+            }
+            drawBuffer->m_i = 0;
+
+            list.push_back({ state, DrawMode::TRIANGLES, {}, drawBuffer });
         }
 
-        pointer[stateHash] = list.size();
-
-        if (!drawBuffer) {
-            drawBuffer = std::make_shared<DrawBuffer>();
-        }
-
-        if (drawBuffer->m_hashs.empty()) {
-            if (drawBuffer->m_coords)
-                drawBuffer->m_coords->clear();
-            else
-                drawBuffer->m_coords = std::make_shared<CoordsBuffer>();
-
-            drawBuffer->m_hashs.push_back(methodHash);
-            addCoords(method, *drawBuffer->m_coords, DrawMode::TRIANGLES);
-        }
-        drawBuffer->m_i = 0;
-
-        list.push_back({ state, DrawMode::TRIANGLES, {}, drawBuffer });
-
+        delete method;
         return;
     }
 
@@ -102,14 +103,17 @@ void Pool::add(const Color& color, const TexturePtr& texture, const DrawMethod& 
         auto& prevObj = list.back();
 
         const bool sameState = prevObj.state == state;
-        if (!method.dest.isNull()) {
+
+        if (method->hasRefPoint()) {
+            const auto* methodT = static_cast<const DrawTextureRect*>(method);
             // Look for identical or opaque textures that are greater than or
             // equal to the size of the previous texture, if so, remove it from the list so they don't get drawn.
             for (auto itm = prevObj.drawMethods.begin(); itm != prevObj.drawMethods.end(); ++itm) {
-                auto& prevMtd = *itm;
-                if (prevMtd.dest == method.dest &&
-                   ((sameState && prevMtd.rects.second == method.rects.second) || (state.texture->isOpaque() && prevObj.state.texture->canSuperimposed()))) {
+                const auto* prevMtd = static_cast<const DrawTextureRect*>(*itm);
+                if (prevMtd->m_destP == methodT->m_destP &&
+               ((sameState && prevMtd->m_src == methodT->m_src) || (state.texture->isOpaque() && prevObj.state.texture->canSuperimposed()))) {
                     prevObj.drawMethods.erase(itm);
+                    delete prevMtd;
                     break;
                 }
             }
@@ -125,28 +129,7 @@ void Pool::add(const Color& color, const TexturePtr& texture, const DrawMethod& 
     list.push_back({ state, drawMode, {method} });
 }
 
-void Pool::addCoords(const DrawMethod& method, CoordsBuffer& buffer, DrawMode drawMode)
-{
-    if (method.type == DrawMethodType::BOUNDING_RECT) {
-        buffer.addBoudingRect(method.rects.first, method.intValue);
-    } else if (method.type == DrawMethodType::RECT) {
-        if (drawMode == DrawMode::TRIANGLES)
-            buffer.addRect(method.rects.first, method.rects.second);
-        else
-            buffer.addQuad(method.rects.first, method.rects.second);
-    } else if (method.type == DrawMethodType::TRIANGLE) {
-        buffer.addTriangle(std::get<0>(method.points), std::get<1>(method.points), std::get<2>(method.points));
-    } else if (method.type == DrawMethodType::UPSIDEDOWN_RECT) {
-        if (drawMode == DrawMode::TRIANGLES)
-            buffer.addUpsideDownRect(method.rects.first, method.rects.second);
-        else
-            buffer.addUpsideDownQuad(method.rects.first, method.rects.second);
-    } else if (method.type == DrawMethodType::REPEATED_RECT) {
-        buffer.addRepeatedRects(method.rects.first, method.rects.second);
-    }
-}
-
-void Pool::updateHash(const Painter::PainterState& state, const DrawMethod& method,
+void Pool::updateHash(const Painter::PainterState& state, const DrawMethod* method,
                             size_t& stateHash, size_t& methodhash)
 {
     { // State Hash
@@ -180,21 +163,16 @@ void Pool::updateHash(const Painter::PainterState& state, const DrawMethod& meth
     }
 
     { // Method Hash
-        if (method.rects.first.isValid()) stdext::hash_union(methodhash, method.rects.first.hash());
-        if (method.rects.second.isValid()) stdext::hash_union(methodhash, method.rects.second.hash());
-
-        const auto& a = std::get<0>(method.points),
-            b = std::get<1>(method.points),
-            c = std::get<2>(method.points);
-
-        if (!a.isNull()) stdext::hash_union(methodhash, a.hash());
-        if (!b.isNull()) stdext::hash_union(methodhash, b.hash());
-        if (!c.isNull()) stdext::hash_union(methodhash, c.hash());
-
-        if (method.intValue) stdext::hash_combine(methodhash, method.intValue);
-
+        method->updateHash(methodhash);
         stdext::hash_union(m_status.second, methodhash);
     }
+}
+
+void Pool::free()
+{
+    for (const auto& o : m_objects)
+        for (const auto* m : o.drawMethods)
+            delete m;
 }
 
 void Pool::setCompositionMode(const CompositionMode mode, const int pos)

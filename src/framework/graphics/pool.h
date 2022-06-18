@@ -28,6 +28,7 @@
 #include "framebuffer.h"
 #include "framework/core/timer.h"
 #include "texture.h"
+#include "drawmethod.h"
 
 #include "../stdext/storage.h"
 
@@ -73,54 +74,13 @@ public:
     PoolType getType() const { return m_type; }
 
 protected:
-    enum class DrawMethodType
-    {
-        RECT,
-        TRIANGLE,
-        REPEATED_RECT,
-        BOUNDING_RECT,
-        UPSIDEDOWN_RECT,
-    };
-
-    struct State
-    {
-        ~State() { shaderProgram = nullptr; action = nullptr; }
-
-        CompositionMode compositionMode{ CompositionMode::NORMAL };
-        BlendEquation blendEquation{ BlendEquation::ADD };
-        Rect clipRect;
-        float opacity{ 1.f };
-        PainterShaderProgram* shaderProgram{ nullptr };
-        std::function<void()> action{ nullptr };
-    };
-
-    struct DrawMethod
-    {
-        DrawMethodType type;
-        std::pair<Rect, Rect> rects;
-        std::tuple<Point, Point, Point> points;
-        Point dest;
-
-        uint16_t intValue{ 0 };
-    };
-
-    struct DrawObject
-    {
-        ~DrawObject() { drawMethods.clear(); state.texture = nullptr; action = nullptr; }
-
-        Painter::PainterState state;
-        DrawMode drawMode;
-        std::vector<DrawMethod> drawMethods;
-        DrawBufferPtr buffer;
-        std::function<void()> action{ nullptr };
-    };
 
 private:
     static Pool* create(const PoolType type);
 
-    void add(const Color& color, const TexturePtr& texture, const Pool::DrawMethod& method, DrawMode drawMode = DrawMode::TRIANGLES, DrawBufferPtr drawBuffer = nullptr);
-    void addCoords(const Pool::DrawMethod& method, CoordsBuffer& buffer, DrawMode drawMode);
-    void updateHash(const Painter::PainterState& state, const Pool::DrawMethod& method, size_t& stateHash, size_t& methodHash);
+    void add(const Color& color, const TexturePtr& texture, const DrawMethod* method, DrawMode drawMode = DrawMode::TRIANGLES, DrawBufferPtr drawBuffer = nullptr);
+    void updateHash(const Painter::PainterState& state, const DrawMethod* method, size_t& stateHash, size_t& methodHash);
+    void free();
 
     float getOpacity(const int pos = -1) { return pos == -1 ? m_state.opacity : m_objects[pos - 1].state.opacity; }
     Rect getClipRect(const int pos = -1) { return pos == -1 ? m_state.clipRect : m_objects[pos - 1].state.clipRect; }
@@ -150,7 +110,7 @@ private:
         m_forceGrouping{ false },
         m_autoUpdate{ false };
 
-    State m_state;
+    _DrawState m_state;
 
     PoolType m_type{ PoolType::UNKNOW };
 

@@ -49,7 +49,6 @@ struct DrawMethod
     virtual void add(CoordsBuffer& buffer, DrawMode drawMode) const {};
     virtual void updateHash(size_t& methodhash) const {};
     virtual bool hasRefPoint() const { return false; };
-    virtual bool isEqual(DrawMethod& method) const { return true; };
 };
 
 struct DrawBoundingRect : DrawMethod
@@ -157,13 +156,6 @@ struct DrawRepatedRects : DrawRect
 
 struct DrawObject
 {
-    ~DrawObject()
-    {
-        state.texture = nullptr;
-        action = nullptr;
-        buffer = nullptr;
-    }
-
     Painter::PainterState state;
     DrawMode drawMode;
     std::vector<const DrawMethod*> drawMethods;

@@ -19,6 +19,16 @@
 
 if (VCPKG_TARGET_ANDROID)
 
+    set(Android_INCLUDES ${Android_INCLUDES} ${CMAKE_SOURCE_DIR}/android/app/libs/include)
+    set(Android_LIBRARIES ${Android_LIBRARIES} ${CMAKE_SOURCE_DIR}/android/app/libs/lib/${CMAKE_ANDROID_ARCH_ABI})
+    set(LUA_LIBRARY ${LUA_LIBRARY} ${Android_LIBRARIES}/liblua.a)
+    set(LUAJIT_INCLUDE_DIR ${LUAJIT_INCLUDE_DIR} ${Android_INCLUDES})
+	set(LUAJIT_LIBRARY ${LUAJIT_LIBRARY} ${Android_LIBRARIES}/libluajit.a)
+	set(OpenAL_LIBRARY ${OpenAL_LIBRARY} ${Android_LIBRARIES}/libopenal.a)
+    set(MINIZIP_INCLUDE_DIR ${MINIZIP_INCLUDE_DIR} ${Android_INCLUDES}/minizip)
+	set(MINIZIP_LIBRARY ${MINIZIP_LIBRARY} ${Android_LIBRARIES}/libminizip.a)
+    include_directories(${Android_INCLUDES})
+
     #
     # 1. Check the presence of environment variable ANDROID_NDK_HOME
     #

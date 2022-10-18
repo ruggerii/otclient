@@ -14,7 +14,10 @@
     "liblzma",
     "parallel-hashmap",
     "stduuid",
-    "luajit",
+    {
+      "name": "luajit",
+      "platform": "!android"
+    },
     {
       "name": "opengl",
       "platform": "windows | linux"

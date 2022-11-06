@@ -61,7 +61,8 @@ void Connection::terminate()
 }
 
 void Connection::close()
-{
+{   
+    g_logger.info("clossing connection");
     if (!m_connected && !m_connecting)
         return;
 
@@ -89,6 +90,7 @@ void Connection::close()
 
 void Connection::connect(const std::string_view host, uint16_t port, const std::function<void()>& connectCallback)
 {
+    g_logger.info("connect");
     m_connected = false;
     m_connecting = true;
     m_error.clear();

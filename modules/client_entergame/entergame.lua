@@ -6,9 +6,12 @@ local enterGame
 local motdWindow
 local motdButton
 local enterGameButton
-local clientBox
+-- local clientBox
 local protocolLogin
 local motdEnabled = true
+local current_host = 'arthenia.8gs.org'
+local current_port = 7171
+local currentServerVersion = 860
 
 -- private functions
 local function onError(protocol, message, errorCode)
@@ -142,7 +145,7 @@ function EnterGame.init()
     EnterGame.setPassword(password)
 
     enterGame:getChildById('serverHostTextEdit'):setText(host)
-    enterGame:getChildById('serverPortTextEdit'):setText(port)
+    -- enterGame:getChildById('serverPortTextEdit'):setText(port)
     enterGame:getChildById('autoLoginBox'):setChecked(autologin)
     enterGame:getChildById('stayLoggedBox'):setChecked(stayLogged)
 
@@ -154,26 +157,26 @@ function EnterGame.init()
             installed_qty = installed_qty + 1
         end
     end
-    clientBox = enterGame:getChildById('clientComboBox')
-    for _, proto in pairs(g_game.getSupportedClients()) do
-        local proto_str = tostring(proto)
-        if installedClients[proto_str] or installed_qty == 0 then
-            installedClients[proto_str] = nil
-            clientBox:addOption(proto)
-        end
-    end
+    -- clientBox = enterGame:getChildById('clientComboBox')
+    -- for _, proto in pairs(g_game.getSupportedClients()) do
+    --     local proto_str = tostring(proto)
+    --     if installedClients[proto_str] or installed_qty == 0 then
+    --         installedClients[proto_str] = nil
+    --         clientBox:addOption(proto)
+    --     end
+    -- end
     for proto_str, status in pairs(installedClients) do
         if status == true then
             print(string.format('Warning: %s recognized as an installed client, but not supported.', proto_str))
         end
     end
-    clientBox:setCurrentOption(clientVersion)
+    -- clientBox:setCurrentOption(clientVersion)
 
     EnterGame.toggleAuthenticatorToken(clientVersion, true)
     EnterGame.toggleStayLoggedBox(clientVersion, true)
-    connect(clientBox, {
-        onOptionChange = EnterGame.onClientVersionChange
-    })
+    -- connect(clientBox, {
+    --     onOptionChange = EnterGame.onClientVersionChange
+    -- })
 
     enterGame:hide()
 
@@ -201,14 +204,14 @@ end
 
 function EnterGame.terminate()
     g_keyboard.unbindKeyDown('Ctrl+G')
-    disconnect(clientBox, {
-        onOptionChange = EnterGame.onClientVersionChange
-    })
+    -- disconnect(clientBox, {
+    --     onOptionChange = EnterGame.onClientVersionChange
+    -- })
     enterGame:destroy()
     enterGame = nil
     enterGameButton:destroy()
     enterGameButton = nil
-    clientBox = nil
+    -- clientBox = nil
     if motdWindow then
         motdWindow:destroy()
         motdWindow = nil
@@ -423,9 +426,9 @@ function EnterGame.doLogin()
     G.password = enterGame:getChildById('accountPasswordTextEdit'):getText()
     G.authenticatorToken = enterGame:getChildById('authenticatorTokenTextEdit'):getText()
     G.stayLogged = enterGame:getChildById('stayLoggedBox'):isChecked()
-    G.host = enterGame:getChildById('serverHostTextEdit'):getText()
-    G.port = tonumber(enterGame:getChildById('serverPortTextEdit'):getText())
-    local clientVersion = tonumber(clientBox:getText())
+    G.host = current_host
+    G.port = current_port
+    local clientVersion = tonumber(currentServerVersion)
     EnterGame.hide()
 
     if g_game.isOnline() then
@@ -484,16 +487,16 @@ end
 
 function EnterGame.setDefaultServer(host, port, protocol)
     local hostTextEdit = enterGame:getChildById('serverHostTextEdit')
-    local portTextEdit = enterGame:getChildById('serverPortTextEdit')
-    local clientLabel = enterGame:getChildById('clientLabel')
+    -- local portTextEdit = enterGame:getChildById('serverPortTextEdit')
+    -- local clientLabel = enterGame:getChildById('clientLabel')
     local accountTextEdit = enterGame:getChildById('accountNameTextEdit')
     local passwordTextEdit = enterGame:getChildById('accountPasswordTextEdit')
     local authenticatorTokenTextEdit = enterGame:getChildById('authenticatorTokenTextEdit')
 
     if hostTextEdit:getText() ~= host then
         hostTextEdit:setText(host)
-        portTextEdit:setText(port)
-        clientBox:setCurrentOption(protocol)
+        -- portTextEdit:setText(port)
+        -- clientBox:setCurrentOption(protocol)
         accountTextEdit:setText('')
         passwordTextEdit:setText('')
         authenticatorTokenTextEdit:setText('')
@@ -505,10 +508,10 @@ function EnterGame.setUniqueServer(host, port, protocol, windowWidth, windowHeig
     hostTextEdit:setText(host)
     hostTextEdit:setVisible(false)
     hostTextEdit:setHeight(0)
-    local portTextEdit = enterGame:getChildById('serverPortTextEdit')
-    portTextEdit:setText(port)
-    portTextEdit:setVisible(false)
-    portTextEdit:setHeight(0)
+    -- local portTextEdit = enterGame:getChildById('serverPortTextEdit')
+    -- portTextEdit:setText(port)
+    -- portTextEdit:setVisible(false)
+    -- portTextEdit:setHeight(0)
 
     local authenticatorTokenTextEdit = enterGame:getChildById('authenticatorTokenTextEdit')
     authenticatorTokenTextEdit:setText('')
@@ -520,19 +523,19 @@ function EnterGame.setUniqueServer(host, port, protocol, windowWidth, windowHeig
     stayLoggedBox:setChecked(false)
     stayLoggedBox:setOn(false)
 
-    clientBox:setCurrentOption(protocol)
-    clientBox:setVisible(false)
-    clientBox:setHeight(0)
+    -- clientBox:setCurrentOption(protocol)
+    -- clientBox:setVisible(false)
+    -- clientBox:setHeight(0)
 
     local serverLabel = enterGame:getChildById('serverLabel')
     serverLabel:setVisible(false)
     serverLabel:setHeight(0)
-    local portLabel = enterGame:getChildById('portLabel')
-    portLabel:setVisible(false)
-    portLabel:setHeight(0)
-    local clientLabel = enterGame:getChildById('clientLabel')
-    clientLabel:setVisible(false)
-    clientLabel:setHeight(0)
+    -- local portLabel = enterGame:getChildById('portLabel')
+    -- portLabel:setVisible(false)
+    -- portLabel:setHeight(0)
+    -- local clientLabel = enterGame:getChildById('clientLabel')
+    -- clientLabel:setVisible(false)
+    -- clientLabel:setHeight(0)
 
     local serverListButton = enterGame:getChildById('serverListButton')
     serverListButton:setVisible(false)

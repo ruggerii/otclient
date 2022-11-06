@@ -25,18 +25,27 @@
 #include <framework/core/resourcemanager.h>
 #include <framework/luaengine/luainterface.h>
 
-#ifdef FRAMEWORK_NET
-#include <framework/net/protocolhttp.h>
-#endif
+#include <framework/platform/platform.h>
+
+ #ifdef FRAMEWORK_NET
+ #include <framework/net/protocolhttp.h>
+ #endif
+
+namespace fs = std::filesystem;
 
 int main(int argc, const char* argv[])
 {
     std::vector<std::string> args(argv, argv + argc);
 
+    std::string path = g_platform.getCurrentDir();
+    for (const auto& entry : fs::directory_iterator(path)) {
+        g_logger.info(entry.path().string());
+    }
+
     // setup application name and version
-    g_app.setName("OTClient - Redemption");
-    g_app.setCompactName("otclient");
-    g_app.setOrganizationName("otbr");
+    g_app.setName("Arthenia - Online");
+    g_app.setCompactName("Arthenia");
+    g_app.setOrganizationName("8GS");
 
 #if ENABLE_ENCRYPTION == 1 && ENABLE_ENCRYPTION_BUILDER == 1
     if (std::find(args.begin(), args.end(), "--encrypt") != args.end()) {

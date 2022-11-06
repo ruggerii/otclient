@@ -24,6 +24,7 @@
 
 #include "protocolhttp.h"
 
+
 Http g_http;
 
 void Http::init()
@@ -66,7 +67,7 @@ int Http::get(const std::string& url, int timeout)
         result->url = url;
         result->operationId = operationId;
         m_operations[operationId] = result;
-        auto session = std::make_shared<HttpSession>(m_ios, url, m_userAgent, m_enable_time_out_on_read_write, m_custom_header, timeout,
+        std::shared_ptr<HttpSession> session = std::make_shared<HttpSession>(m_ios, url, m_userAgent, m_enable_time_out_on_read_write, m_custom_header, timeout,
                                                      false, result, [&](HttpResult_ptr result) {
             bool finished = result->finished;
             g_dispatcher.addEvent([result, finished] {
@@ -76,10 +77,13 @@ int Http::get(const std::string& url, int timeout)
                 }
                 g_lua.callGlobalField("g_http", "onGet", result->operationId, result->url, result->error, result->response);
             });
+
             if (finished) {
                 m_operations.erase(operationId);
             }
+
         });
+
         result->session = session;
         session->start();
     });
@@ -90,7 +94,7 @@ int Http::get(const std::string& url, int timeout)
 int Http::post(const std::string& url, const std::string& data, int timeout, bool isJson)
 {
     if (!timeout) // lua is not working with default values
-        timeout = 5;
+        timeout = 10;
     if (data.empty()) {
         g_logger.error(stdext::format("Invalid post request for %s, empty data, use get instead", url));
         return -1;
@@ -105,16 +109,22 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
         m_operations[operationId] = result;
         auto session = std::make_shared<HttpSession>(m_ios, url, m_userAgent, m_enable_time_out_on_read_write, m_custom_header, timeout,
                                                      isJson, result, [&](HttpResult_ptr result) {
+                g_logger.info("Realizando POST -> asio::post -> dentro da sess�o");
             bool finished = result->finished;
+
             g_dispatcher.addEvent([result, finished] {
                 if (!finished) {
                     g_lua.callGlobalField("g_http", "onPostProgress", result->operationId, result->url, result->progress);
                     return;
                 }
-                g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, result->error, result->response);
+                std::size_t found = result->response.find_last_of("}");
+              //  std::string formatedResult = "[";
+                //formatedResult.append(result->response.substr(0, found + 1));.append("]");
+                std::string formatedResult = result->response.substr(0, found + 1);
+                g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, result->error, formatedResult);
             });
             if (finished) {
-                m_operations.erase(operationId);
+               m_operations.erase(operationId);
             }
         });
         result->session = session;
@@ -158,6 +168,7 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
 
             m_operations.erase(operationId);
         });
+
         result->session = session;
         session->start();
     });
@@ -255,9 +266,9 @@ void HttpSession::start()
         m_request.append("Host: " + instance_uri.domain + "\r\n");
         m_request.append("User-Agent: " + m_agent + "\r\n");
         m_request.append("Accept: */*\r\n");
-        for (const auto& ch : m_custom_header) {
-            m_request.append(ch.first + ch.second + "\r\n");
-        }
+         //for (const auto& ch : m_custom_header) {
+        //    m_request.append(ch.first + ch.second + "\r\n");
+      //  }
         if (m_isJson) {
             m_request.append("Content-Type: application/json\r\n");
         } else {
@@ -266,7 +277,8 @@ void HttpSession::start()
         m_request.append("Content-Length: " + std::to_string(m_result->postData.size()) + "\r\n");
         m_request.append("\r\n");
         m_request.append(m_result->postData + "\r\n");
-        m_request.append("Connection: close\r\n\r\n");
+        m_request.append("Connection: close");
+        //g_logger.info(m_request);
     }
 
     m_resolver.async_resolve(
@@ -356,6 +368,7 @@ void HttpSession::on_write()
         asio::async_write(m_ssl, asio::buffer(m_request), [sft = shared_from_this()]
         (const std::error_code& ec, size_t bytes) { sft->on_request_sent(ec, bytes); });
     } else {
+
         asio::async_write(m_socket, asio::buffer(m_request), [sft = shared_from_this()]
         (const std::error_code& ec, size_t bytes) {sft->on_request_sent(ec, bytes); });
     }
@@ -401,13 +414,18 @@ void HttpSession::on_request_sent(const std::error_code& ec, size_t bytes_transf
             });
         });
     } else {
+     
         asio::async_read_until(
             m_socket, m_response, "\r\n\r\n",
             [this](const std::error_code& ec, size_t size) {
+              
+                g_logger.info("request sent: ");
+
             if (ec) {
                 onError("HttpSession error receiving header " + m_url + ": " + ec.message());
                 return;
             }
+            
             std::string header(
                 asio::buffers_begin(m_response.data()),
                 asio::buffers_begin(m_response.data()) + size);
@@ -425,6 +443,7 @@ void HttpSession::on_request_sent(const std::error_code& ec, size_t bytes_transf
                              asio::transfer_at_least(1),
                              [sft = shared_from_this()](
                                  const std::error_code& ec, size_t bytes) {
+                                    
                 sft->on_read(ec, bytes);
             });
         });
@@ -437,14 +456,16 @@ void HttpSession::on_request_sent(const std::error_code& ec, size_t bytes_transf
 
 void HttpSession::on_read(const std::error_code& ec, size_t bytes_transferred)
 {
+
     auto on_done_read = [&]() {
+        
         m_timer.cancel();
         const auto& data = m_response.data();
         m_result->response.append(asio::buffers_begin(data), asio::buffers_end(data));
         m_result->finished = true;
         m_callback(m_result);
     };
-
+    
     if (ec && ec != asio::error::eof) {
         onError("HttpSession unable to on_read " + m_url + ": " + ec.message());
         return;
@@ -480,6 +501,7 @@ void HttpSession::on_read(const std::error_code& ec, size_t bytes_transferred)
                 }
             });
         } else {
+            g_logger.info("on read");
             asio::async_read(m_socket, m_response,
                              asio::transfer_at_least(1),
                              [sft = shared_from_this(), on_done_read](
@@ -601,6 +623,7 @@ void WebsocketSession::on_resolve(const std::error_code& ec, asio::ip::tcp::reso
 
 void WebsocketSession::on_connect(const std::error_code& ec)
 {
+
     if (ec) {
         onError("WebsocketSession unable to on_connect " + m_url + ": " + ec.message());
         return;

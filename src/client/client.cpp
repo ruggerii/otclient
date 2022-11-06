@@ -39,11 +39,12 @@ void Client::init(std::vector<std::string>& /*args*/)
     g_map.init();
     g_minimap.init();
     g_game.init();
-    g_shaders.init();
+    //g_shaders.init();
     g_sprites.init();
     g_spriteAppearances.init();
     g_things.init();
 }
+
 
 void Client::terminate()
 {
@@ -54,5 +55,5 @@ void Client::terminate()
     g_things.terminate();
     g_sprites.terminate();
     g_spriteAppearances.terminate();
-    g_shaders.terminate();
+    //g_shaders.terminate();
 }

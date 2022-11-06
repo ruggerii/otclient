@@ -31,6 +31,8 @@
 
 #include <physfs.h>
 
+#include <zlib.h>
+
 ResourceManager g_resources;
 
 void ResourceManager::init(const char* argv0)
@@ -485,4 +487,15 @@ void ResourceManager::save_string_into_file(const std::string& contents, const s
     datFile.open(name, std::ofstream::binary | std::ofstream::trunc | std::ofstream::out);
     datFile.write(contents.c_str(), contents.size());
     datFile.close();
+}
+
+std::map<std::string, std::string> ResourceManager::filesChecksums()
+{
+    std::map<std::string, std::string> files = std::map<std::string, std::string>();
+    uint32_t  crc = crc32(0L, Z_NULL, 0);
+    //uint32_t checksum = crc32(crc, (const unsigned char*)result->response.c_str(), result->response.size());
+
+
+
+    return files;
 }

@@ -151,6 +151,7 @@ function HTTP.onGetProgress(operationId, url, progress)
 end
 
 function HTTP.onPost(operationId, url, err, data)
+
   local operation = HTTP.operations[operationId]
   if operation == nil then
     return

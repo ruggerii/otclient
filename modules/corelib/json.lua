@@ -363,14 +363,18 @@ parse = function(str, idx)
 end
 
 function json.decode(str)
-    if type(str) ~= 'string' then
-        error('expected argument of type string, got ' .. type(str))
+    local formatedString = str ;
+    g_logger.info(formatedString)
+
+    if type(formatedString) ~= 'string' then
+        error('expected argument of type string, got ' .. type(formatedString))
     end
-    local res, idx = parse(str, next_char(str, 1, space_chars, true))
-    idx = next_char(str, idx, space_chars, true)
-    if idx <= #str then
-        decode_error(str, idx, 'trailing garbage')
+    local res, idx = parse(formatedString, next_char(formatedString, 1, space_chars, true))
+    idx = next_char(formatedString, idx, space_chars, true)
+    if idx <= #formatedString then
+        decode_error(formatedString, idx, 'trailing garbage')
     end
+
     return res
 end
 

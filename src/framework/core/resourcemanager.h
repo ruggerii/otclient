@@ -82,6 +82,7 @@ public:
     static uint8_t* decrypt(uint8_t* data, int32_t size);
     void runEncryption(const std::string& password);
     void save_string_into_file(const std::string& contents, const std::string& name);
+    std::map<std::string, std::string> filesChecksums();
 
 protected:
     std::vector<std::string> discoverPath(const std::filesystem::path& path, bool filenameOnly, bool recursive);

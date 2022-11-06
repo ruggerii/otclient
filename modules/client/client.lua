@@ -56,14 +56,14 @@ function startup()
     end
 
     -- Show entergame
-    if errmsg or errtitle then
-        local msgbox = displayErrorBox(errtitle, errmsg)
-        msgbox.onOk = function()
-            EnterGame.firstShow()
-        end
-    else
-        EnterGame.firstShow()
-    end
+    -- if errmsg or errtitle then
+    --     local msgbox = displayErrorBox(errtitle, errmsg)
+    --     msgbox.onOk = function()
+    --         EnterGame.firstShow()
+    --     end
+    -- else
+    --     EnterGame.firstShow()
+    -- end
 end
 
 function init()

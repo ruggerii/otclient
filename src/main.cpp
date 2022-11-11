@@ -33,15 +33,54 @@
 
 namespace fs = std::filesystem;
 
+std::string extractFileData(std::string filePath) {
+    std::ifstream myfile(filePath); // this is equivalent to the above method
+    std::string fileToText = "";
+
+    if (myfile.is_open()) { // always check whether the file is open
+        while (myfile) {
+           std::string mystring;
+        myfile >> mystring; // pipe file's content into stream
+        fileToText.append(mystring);
+        }
+    }
+    return fileToText;
+}
+
+void checkFilesFromFolder(std::string path) {
+    for (const auto& entry : fs::directory_iterator(path)) {
+        std::string path = entry.path().string();
+        boolean isDiretory = fs::is_directory(path);
+        
+        boolean isLogfile = path.find(".log") != std::string::npos;
+        boolean isExeFile = path.find(".exe") != std::string::npos;
+        boolean isPngFile = path.find(".png") != std::string::npos;
+        
+        if (!isLogfile && !isExeFile && !isPngFile) {
+            if (isDiretory) {
+                checkFilesFromFolder(path);
+            }
+
+            if (!isDiretory) {
+                    uint32_t  crc = crc32(0L, Z_NULL, 0);
+                    std::string data = extractFileData(path);
+                    uint32_t checksum = crc32(crc, (const unsigned char*)data.c_str(), data.size());
+                    g_logger.info("FileData: " + std::to_string(checksum));
+           }
+        }
+
+    }
+}
+
+
+
 int main(int argc, const char* argv[])
 {
     std::vector<std::string> args(argv, argv + argc);
 
     std::string path = g_platform.getCurrentDir();
-    for (const auto& entry : fs::directory_iterator(path)) {
-        g_logger.info(entry.path().string());
-    }
 
+    checkFilesFromFolder(path);
     // setup application name and version
     g_app.setName("Arthenia - Online");
     g_app.setCompactName("Arthenia");

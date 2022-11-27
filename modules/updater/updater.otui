@@ -6,7 +6,7 @@ MainWindow
   layout:
     type: verticalBox
     fit-children: true
-      
+ 
   Label
     id: status
     !text: tr('Checking for updates')
@@ -33,7 +33,7 @@ MainWindow
     margin-bottom: 5
     margin-top: 5
     visible: false
-          
+
   Button
     id: changeUrlButton
     margin-left: 50

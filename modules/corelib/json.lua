@@ -364,7 +364,6 @@ end
 
 function json.decode(str)
     local formatedString = str ;
-    g_logger.info(formatedString)
 
     if type(formatedString) ~= 'string' then
         error('expected argument of type string, got ' .. type(formatedString))

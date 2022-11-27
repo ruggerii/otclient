@@ -56,6 +56,7 @@ function HTTP.download(url, file, callback, progressCallback)
   if not g_http or not g_http.download then
     return error("HTTP.download is not supported")
   end
+
   local operation = g_http.download(url, file, HTTP.timeout)
   HTTP.operations[operation] = {type="download", url=url, file=file, callback=callback, progressCallback=progressCallback}  
   return operation

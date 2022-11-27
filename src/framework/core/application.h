@@ -59,6 +59,8 @@ public:
     std::string getBuildCommit();
     std::string getOs();
     std::string getStartupOptions() { return m_startupOptions; }
+    void deleteOldExecutable();
+    void restart();
 
 protected:
     void registerLuaFunctions();

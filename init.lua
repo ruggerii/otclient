@@ -1,6 +1,6 @@
 -- this is the first file executed when the application starts
 -- we have to load the first modules form here
-APP_VERSION = 1341       -- client version for updater and login to identify outdated client
+APP_VERSION = "1.0.1"       -- client version for updater and login to identify outdated client
 -- set true so that modules are reloaded when modified. (Note: Use only dev mod)
 AUTO_RELOAD_MODULE = false
 
@@ -41,23 +41,6 @@ g_configs.loadSettings('/config.otml')
 g_modules.discoverModules()
 g_modules.ensureModuleLoaded("corelib")
 
--- -- libraries modules 0-99
--- g_modules.autoLoadModules(99)
--- g_modules.ensureModuleLoaded("corelib")
--- g_modules.ensureModuleLoaded("gamelib")
-
--- -- client modules 100-499
--- g_modules.autoLoadModules(499)
--- g_modules.ensureModuleLoaded("client")
-
--- -- game modules 500-999
--- g_modules.autoLoadModules(999)
--- g_modules.ensureModuleLoaded("game_interface")
-
--- -- mods 1000-9999
--- g_modules.autoLoadModules(9999)
--- g_modules.ensureModuleLoaded("updater")
-
 local function loadModules()
   -- libraries modules 0-99
   g_modules.autoLoadModules(99)
@@ -75,28 +58,18 @@ local function loadModules()
   g_modules.autoLoadModules(9999)
 end
 Services = {
-  website = "otclient.ovh", -- currently not used
-  updater = "ec2-3-88-202-115.compute-1.amazonaws.com/updater",
-  stats = "",
-  crash = "otclient.ovh/api/crash.php",
-  feedback = "otclient.ovh/api/feedback.php",
-  status = "otclient.ovh/api/status.php"
+  updater = "localhost:3000/updater",
 }
 loadModules()
 
-if Services.updater:len() > 4 then
-  g_modules.ensureModuleLoaded("updater")
-  return Updater.init(loadModules)
-end
-
-
 local script = '/' .. g_app.getCompactName() .. 'rc.lua'
-
-
-
 
 if g_resources.fileExists(script) then
     dofile(script)
 end
 
+if Services.updater:len() > 4 then
+  g_modules.ensureModuleLoaded("updater")
+  return Updater.init(loadModules)
+end
 

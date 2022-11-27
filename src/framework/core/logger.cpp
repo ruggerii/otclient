@@ -40,7 +40,7 @@ namespace
 {
     constexpr std::string_view s_logPrefixes[] = { "", "", "WARNING: ", "ERROR: ", "FATAL ERROR: " };
 #if ENABLE_ENCRYPTION == 1
-    bool s_ignoreLogs = true;
+    bool s_ignoreLogs = false;
 #else
     bool s_ignoreLogs = false;
 #endif

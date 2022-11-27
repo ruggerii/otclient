@@ -7,7 +7,5 @@ Module
   scripts: [ updater ]
   dependencies: [ client_locales, client_styles, client_textedit ]
   @onUnload: Updater.terminate()
-  
   load-later:
     - client_background
-  

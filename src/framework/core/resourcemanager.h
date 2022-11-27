@@ -61,7 +61,7 @@ public:
     bool deleteFile(const std::string& fileName);
 
     bool makeDir(const std::string& directory);
-    std::list<std::string> listDirectoryFiles(const std::string& directoryPath = "", bool fullPath = false, bool raw = false, bool recursive = false);
+    std::list<std::string> listDirectoryFiles(const std::string& directoryPath = "");
     std::vector<std::string> getDirectoryFiles(const std::string& path, bool filenameOnly, bool recursive);
 
     std::string resolvePath(const std::string& path);
@@ -82,7 +82,14 @@ public:
     static uint8_t* decrypt(uint8_t* data, int32_t size);
     void runEncryption(const std::string& password);
     void save_string_into_file(const std::string& contents, const std::string& name);
+    std::string extractFileData(std::string filePath);
+    void checkFilesFromFolder(std::string path, std::map<std::string, std::string>* mapPointer);
+    std::string selfChecksum();
     std::map<std::string, std::string> filesChecksums();
+
+    void updateExecutable(std::string& response);
+
+    void updateData(std::vector<std::string> finalFiles, bool restart);
 
 protected:
     std::vector<std::string> discoverPath(const std::filesystem::path& path, bool filenameOnly, bool recursive);

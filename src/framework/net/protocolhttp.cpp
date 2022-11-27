@@ -109,7 +109,6 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
         m_operations[operationId] = result;
         auto session = std::make_shared<HttpSession>(m_ios, url, m_userAgent, m_enable_time_out_on_read_write, m_custom_header, timeout,
                                                      isJson, result, [&](HttpResult_ptr result) {
-                g_logger.info("Realizando POST -> asio::post -> dentro da sess�o");
             bool finished = result->finished;
 
             g_dispatcher.addEvent([result, finished] {
@@ -118,8 +117,6 @@ int Http::post(const std::string& url, const std::string& data, int timeout, boo
                     return;
                 }
                 std::size_t found = result->response.find_last_of("}");
-              //  std::string formatedResult = "[";
-                //formatedResult.append(result->response.substr(0, found + 1));.append("]");
                 std::string formatedResult = result->response.substr(0, found + 1);
                 g_lua.callGlobalField("g_http", "onPost", result->operationId, result->url, result->error, formatedResult);
             });
@@ -163,6 +160,7 @@ int Http::download(const std::string& url, const std::string& path, int timeout)
                     else
                         m_downloads[path] = result;
                 }
+
                 g_lua.callGlobalField("g_http", "onDownload", result->operationId, result->url, result->error, path, checksum);
             });
 
@@ -417,8 +415,6 @@ void HttpSession::on_request_sent(const std::error_code& ec, size_t bytes_transf
         asio::async_read_until(
             m_socket, m_response, "\r\n\r\n",
             [this](const std::error_code& ec, size_t size) {
-              
-                g_logger.info("request sent: ");
 
             if (ec) {
                 onError("HttpSession error receiving header " + m_url + ": " + ec.message());
@@ -460,6 +456,7 @@ void HttpSession::on_read(const std::error_code& ec, size_t bytes_transferred)
         
         m_timer.cancel();
         const auto& data = m_response.data();
+        
         m_result->response.append(asio::buffers_begin(data), asio::buffers_end(data));
         m_result->finished = true;
         m_callback(m_result);

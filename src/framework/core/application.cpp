@@ -94,6 +94,8 @@ void Application::init(std::vector<std::string>& args)
     // initialize lua
     g_lua.init();
     registerLuaFunctions();
+
+    deleteOldExecutable();
 }
 
 void Application::deinit()
@@ -179,6 +181,24 @@ std::string Application::getOs()
 #endif
 }
 
+
+void Application::deleteOldExecutable() 
+{
+    std::string oldExecutablePath = g_platform.getCurrentDir() + "old";
+;   if (g_platform.fileExists(oldExecutablePath)){
+        g_platform.removeFile(oldExecutablePath);
+    }
+}
+
+void Application::restart()
+{
+    std::string path = g_platform.getCurrentDir() + "\\Arthenia.exe";
+    ShellExecute(NULL, "open", path.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+    close();
+}
+
+
+
 // https://stackoverflow.com/a/46448040
 std::string Application::getBuildRevision()
 {
@@ -186,5 +206,6 @@ std::string Application::getBuildRevision()
     ss << std::fixed << std::setprecision(3) << (static_cast<float>(GIT_COMMITS) / 1000);
     return ss.str();
 }
+
 std::string Application::getVersion() { return ADD_QUOTES(GIT_VERSION); }
 std::string Application::getBuildCommit() { return ADD_QUOTES(GIT_BRANCH); }

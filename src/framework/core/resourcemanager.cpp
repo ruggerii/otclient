@@ -28,12 +28,16 @@
 #include <framework/core/application.h>
 #include <framework/luaengine/luainterface.h>
 #include <framework/platform/platform.h>
+#include "framework/net/protocolhttp.h"
+
 
 #include <physfs.h>
 
 #include <zlib.h>
 
 ResourceManager g_resources;
+
+namespace fs = std::filesystem;
 
 void ResourceManager::init(const char* argv0)
 {
@@ -278,30 +282,15 @@ bool ResourceManager::makeDir(const std::string& directory)
     return PHYSFS_mkdir(directory.c_str());
 }
 
-std::list<std::string> ResourceManager::listDirectoryFiles(const std::string& directoryPath, bool fullPath /* = false */, bool raw /*= false*/, bool recursive)
+std::list<std::string> ResourceManager::listDirectoryFiles(const std::string& directoryPath)
 {
     std::list<std::string> files;
-    const auto path = raw ? directoryPath : resolvePath(directoryPath);
-    const auto rc = PHYSFS_enumerateFiles(path.c_str());
+    auto* const rc = PHYSFS_enumerateFiles(resolvePath(directoryPath).c_str());
 
-    if (!rc)
-        return files;
-
-    for (int i = 0; rc[i] != nullptr; i++) {
-        std::string fileOrDir = rc[i];
-        if (fullPath)
-            fileOrDir = path + "/" + fileOrDir;
-
-        if (recursive && directoryExists("/" + fileOrDir)) {
-            const auto& moreFiles = listDirectoryFiles(fileOrDir, fullPath, raw);
-            files.insert(files.end(), moreFiles.begin(), moreFiles.end());
-        } else {
-            files.push_back(fileOrDir);
-        }
-    }
+    for (int i = 0; rc[i] != nullptr; ++i)
+        files.emplace_back(rc[i]);
 
     PHYSFS_freeList(rc);
-    files.sort();
     return files;
 }
 
@@ -504,13 +493,106 @@ void ResourceManager::save_string_into_file(const std::string& contents, const s
     datFile.close();
 }
 
+std::string ResourceManager::extractFileData(std::string filePath) {
+    std::ifstream myfile(filePath); // this is equivalent to the above method
+    std::string fileToText = "";
+
+    if (myfile.is_open()) { // always check whether the file is open
+        while (myfile) {
+            std::string mystring;
+            myfile >> mystring; // pipe file's content into stream
+            fileToText.append(mystring);
+        }
+    }
+
+    return fileToText;
+}
+
+void ResourceManager::checkFilesFromFolder(std::string path, std::map<std::string, std::string>* mapPointer) {
+    for (const auto& entry : fs::directory_iterator(path)) {
+        std::string path = entry.path().string();
+        boolean isDiretory = fs::is_directory(path);
+
+        boolean isLogfile = path.find(".log") != std::string::npos;
+        boolean isExeFile = path.find(".exe") != std::string::npos;
+        boolean isPngFile = path.find(".png") != std::string::npos;
+        boolean isOgg = path.find(".ogg") != std::string::npos;
+        boolean isConfigOtml = path.find("config.otml") != std::string::npos;
+        
+
+        if (!isLogfile && !isPngFile && !isConfigOtml) {
+            if (isDiretory) {
+                checkFilesFromFolder(path, mapPointer);
+            }
+
+            if (!isDiretory) {
+
+                uint32_t  crc = crc32(0L, Z_NULL, 0);
+                //std::string data; //extractFileData(path);
+                std::ifstream ifs(path, std::ios_base::binary);
+                std::string data((std::istreambuf_iterator(ifs)), std::istreambuf_iterator<char>());
+                ifs.close();
+                
+               #if ENABLE_ENCRYPTION == 1
+                data = decrypt(data);
+               #endif
+                uint32_t checksum = crc32(crc, (const Bytef*)data.c_str(), data.size());
+                std::size_t found = path.find_last_of('/');
+                std::string formatedResult = path.substr(found + 1, path.size());
+                g_logger.info("\"" + formatedResult + "\": " + "\"" + std::to_string(checksum).append("\"").append(","));
+  
+                mapPointer->insert({ formatedResult, std::to_string(checksum) });
+            }
+        }
+
+    }
+}
+
+std::string ResourceManager::selfChecksum()
+{
+    std::string fileContents = readFileContents("/Arthenia.exe");
+    uint32_t  crc = crc32(0L, Z_NULL, 0);
+    uint32_t checksum = crc32(crc, (const unsigned char*)fileContents.c_str(), fileContents.size());
+    
+    return std::to_string(checksum);
+}
+
 std::map<std::string, std::string> ResourceManager::filesChecksums()
 {
     std::map<std::string, std::string> files = std::map<std::string, std::string>();
     uint32_t  crc = crc32(0L, Z_NULL, 0);
-    //uint32_t checksum = crc32(crc, (const unsigned char*)result->response.c_str(), result->response.size());
+    std::string path = g_platform.getCurrentDir();
 
-
+    checkFilesFromFolder(path ,&files);
 
     return files;
+}
+
+void ResourceManager::updateExecutable(std::string& response)
+{
+    std::string oldPath = g_platform.getCurrentDir() + "/Arthenia.exe";
+    std::string oldExecutablePath = g_platform.getCurrentDir() + "/old";
+    rename(oldPath.c_str(), oldExecutablePath.c_str());
+    setWriteDir(g_platform.getCurrentDir());
+    auto fileCreated = createFile("Arthenia.exe");
+    writeFileContents("Arthenia.exe", response);
+
+}
+
+void ResourceManager::updateData(std::vector<std::string> finalFiles, bool restart)
+{
+    for (auto i = finalFiles.begin(); i != finalFiles.end(); ++i) {
+
+        std::string response = g_http.getFile(*i)->response;
+
+        if (*i == "Arthenia.exe") {
+            updateExecutable(response);
+        }
+
+        std::string fullPath = getBaseDir() + *i;
+        stdext::replace_all(fullPath, "\\", "/");
+        
+        save_string_into_file(response, fullPath);
+    }
+
 }

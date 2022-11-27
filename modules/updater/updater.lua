@@ -12,16 +12,17 @@ local scheduledEvent
 local httpOperationId = 0
 
 local function loadEnterGame()
---   if errmsg or errtitle then
---     local msgbox = displayErrorBox(errtitle, errmsg)
---     msgbox.onOk = function()
---         EnterGame.firstShow()
---     end
--- else
     EnterGame.firstShow()
 end
 
 local function onLog(level, message, time)
+  if level == LogError then    
+    Updater.error(message)
+    g_logger.setOnLog(nil)
+  end
+end
+
+local function onLog2(level, message, time)
   if level == LogError then    
     Updater.error(message)
     g_logger.setOnLog(nil)
@@ -87,12 +88,12 @@ local function downloadFiles(url, files, index, retries, doneCallback)
   end
   updaterWindow.downloadProgress:setPercent(0)
   updaterWindow.mainProgress:setPercent(math.floor(100 * index / #files))
-  
-  httpOperationId = HTTP.download(url .. file, file,
+  g_logger.info(url .. "?file="..file)
+  httpOperationId = HTTP.download(url .. "?file="..file, file,
     function (file, checksum, err)
-      if not err and checksum ~= file_checksum then
-        err = "Invalid checksum of: " .. file .. ".\nShould be " .. file_checksum .. ", is: " .. checksum
-      end
+      -- if not err and checksum ~= file_checksum then
+      --   err = "Invalid checksum of: " .. file .. ".\nShould be " .. file_checksum .. ", is: " .. checksum
+      -- end
       if err then
         if retries >= Updater.maxRetries then
           Updater.error("Can't download file: " .. file .. ".\nError: " .. err)
@@ -113,23 +114,24 @@ end
 
 local function updateFiles(data, keepCurrentFiles)
   if not updaterWindow then return end
-  if type(data) ~= "table" then
-    return Updater.error("Invalid data from updater api (not table)")
-  end
-  if type(data["error"]) == 'string' and data["error"]:len() > 0 then
-    return Updater.error(data["error"])    
-  end
-  if not data["files"] or type(data["url"]) ~= 'string' or data["url"]:len() < 4 then
-    return Updater.error("Invalid data from updater api: " .. json.encode(data, 2))
-  end
-  if data["keepFiles"] then
-    keepCurrentFiles = true
-  end
+  -- if type(data) ~= "table" then
+  --   return Updater.error("Invalid data from updater api (not table)")
+  -- end
+  -- if type(data["error"]) == 'string' and data["error"]:len() > 0 then
+  --   return Updater.error(data["error"])    
+  -- end
+  -- if not data["files"] or type(data["url"]) ~= 'string' or data["url"]:len() < 4 then
+  --   return Updater.error("Invalid data from updater api: " .. json.encode(data, 2))
+  -- end
+  -- if data["keepFiles"] then
+  --   keepCurrentFiles = true
+  -- end
   
   local newFiles = false
   local finalFiles = {}
   local localFiles = g_resources.filesChecksums()
   local toUpdate = {}
+  local filesToUpdate = {}
   -- keep all files or files from data/things
   for file, checksum in pairs(localFiles) do
     if keepCurrentFiles or string.find(file, "data/things") then
@@ -140,24 +142,25 @@ local function updateFiles(data, keepCurrentFiles)
   for file, checksum in pairs(data["files"]) do
     table.insert(finalFiles, file)
     if not localFiles[file] or localFiles[file] ~= checksum then
-      g_logger.info('file' .. file);
       table.insert(toUpdate, {file, checksum})
+      table.insert(filesToUpdate, file)
       newFiles = true
     end
   end
   -- update binary
   local binary = nil
-  if type(data["binary"]) == "table" and data["binary"]["file"]:len() > 1 then
-    local selfChecksum = g_resources.selfChecksum()
-    if selfChecksum:len() > 0 and selfChecksum ~= data["binary"]["checksum"] then
-      binary = data["binary"]["file"]
-      table.insert(toUpdate, {binary, data["binary"]["checksum"]})
-    end
-  end
+  -- if type(data["binary"]) == "table" and data["binary"]["file"]:len() > 1 then
+  --   local selfChecksum = g_resources.selfChecksum()
+  --   if selfChecksum:len() > 0 and selfChecksum ~= data["binary"]["checksum"] then
+  --     binary = data["binary"]["file"]
+  --     table.insert(toUpdate, {binary, data["binary"]["checksum"]})
+  --   end
+  -- end
   
   if #toUpdate == 0 then -- nothing to update
     updaterWindow.mainProgress:setPercent(100)
     scheduledEvent = scheduleEvent(Updater.abort, 20)
+    loadEnterGame()
     return
   end
   
@@ -182,20 +185,19 @@ local function updateFiles(data, keepCurrentFiles)
   updaterWindow.downloadProgress:show()
   updaterWindow.downloadStatus:show()
   updaterWindow.changeUrlButton:hide()
-  downloadFiles(data["url"], toUpdate, 1, 0, function()
+  downloadFiles(Services.updater, toUpdate, 1, 0, function()
     updaterWindow.status:setText(tr("Updating client (may take few seconds)"))
     updaterWindow.mainProgress:setPercent(100)
     updaterWindow.downloadProgress:hide()
     updaterWindow.downloadStatus:hide() 
     scheduledEvent = scheduleEvent(function()
       local restart = binary or (not loadModulesFunction and reloadModules) or forceRestart
+      g_logger.info('size ' .. #filesToUpdate)
       if newFiles then
-        g_resources.updateData(finalFiles, not restart)
-      end
-      if binary then
-        g_resources.updateExecutable(binary)
+        g_resources.updateData(filesToUpdate, not restart)
       end
       if restart then
+        g_logger.info("SHOULD RESTART NOW")
         g_app.restart()
       else
         if reloadModules then
@@ -203,14 +205,13 @@ local function updateFiles(data, keepCurrentFiles)
         end
         Updater.abort()
       end
-    end, 100)  
+    end, 100)
   end)
 end
 
 -- public functions
 function Updater.init(loadModulesFunc)
   -- g_logger.setOnLog(onLog)
-  g_logger.info(g_window.getPlatformType())
   loadModulesFunction = loadModulesFunc
   initAppWindow()
   Updater.check()
@@ -238,23 +239,16 @@ function Updater.check(args)
   updaterWindow:show()
   updaterWindow:focus()
   updaterWindow:raise()  
-  g_logger.info('OS: ' .. g_app.getOs())
-  g_logger.info('Version: ' .. g_app.getVersion())
-  g_logger.info('APPVersion: ' .. APP_VERSION)
   
   local updateData = nil
   local function progressUpdater(value)
     removeEvent(scheduledEvent)
     if value == 100 then
       loadEnterGame()
-      -- return Updater.error(tr("Timeout"))
-      -- g_logger.info('UPDATE TIMEOUT')
-      -- Updater.abort()
-      -- return
     end
-    -- if updateData and (value > 60 or (not g_window.getPlatformType() == 'X11-EGL' or not ALLOW_CUSTOM_SERVERS or not loadModulesFunc)) then -- gives 3s to set custom updater for mobile version
-    --   return updateFiles(updateData)
-    -- end
+    if updateData and (value > 60 or (not g_window.getPlatformType() == 'X11-EGL' or not ALLOW_CUSTOM_SERVERS or not loadModulesFunc)) then -- gives 3s to set custom updater for mobile version
+      return updateFiles(updateData)
+    end
     scheduledEvent = scheduleEvent(function() progressUpdater(value + 1) end, 50)
     updaterWindow.mainProgress:setPercent(value)
   end
@@ -263,16 +257,14 @@ function Updater.check(args)
 
   httpOperationId = HTTP.postJSON(Services.updater, {
     version = APP_VERSION,
-    build = g_app.getVersion(),
+    appVersion = g_app.getVersion(),
     os = g_app.getOs(),
     platform = g_window.getPlatformType(),
-    args = args or {}
   }, function(data, err)
     if err then      
       g_logger.info(err)
       return Updater.error(err)
     end
-    g_logger.info(dump(data))
     updateData = data
   end)
 end
@@ -282,6 +274,7 @@ function Updater.error(message)
   if not updaterWindow then return end
   displayErrorBox(tr("Updater Error"), message).onOk = function()
     Updater.abort()
+  
   end
 end
 
@@ -297,8 +290,4 @@ function Updater.changeUrl()
     end
     Updater.check()
   end)
-end
-
-function Updater.test() 
-  g_logger.info('UPDATER LOADED..')
 end

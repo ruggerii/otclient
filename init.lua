@@ -2,7 +2,7 @@
 -- we have to load the first modules form here
 APP_VERSION = "1.0.1"       -- client version for updater and login to identify outdated client
 -- set true so that modules are reloaded when modified. (Note: Use only dev mod)
-AUTO_RELOAD_MODULE = false
+AUTO_RELOAD_MODULE = true
 
 -- set latest supported version
 g_game.setLastSupportedVersion(1291)

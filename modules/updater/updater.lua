@@ -214,7 +214,8 @@ function Updater.init(loadModulesFunc)
   -- g_logger.setOnLog(onLog)
   loadModulesFunction = loadModulesFunc
   initAppWindow()
-  Updater.check()
+  -- Updater.check()
+  loadEnterGame()
 end
 
 function Updater.terminate()

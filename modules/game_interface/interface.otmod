@@ -35,5 +35,6 @@ Module
     - game_modaldialog
     - game_unjustifiedpoints
     - game_attachedeffects
+    - game_bestiary
   @onLoad: init()
   @onUnload: terminate()

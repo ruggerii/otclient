@@ -1,0 +1,2 @@
+BestiaryButton < CreatureButton
+  &isBestiaryButton: true

@@ -47,7 +47,9 @@ void Client::init(std::vector<std::string>& /*args*/)
 
 void Client::terminate()
 {
+#ifdef FRAMEWORK_EDITOR
     g_creatures.terminate();
+#endif
     g_game.terminate();
     g_map.terminate();
     g_minimap.terminate();

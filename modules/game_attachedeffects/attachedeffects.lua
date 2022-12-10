@@ -1,12 +1,23 @@
--- Example
---[[
+--[[ -- uncomment this line to apply an effect on the local player, just for testing purposes.
 function onGameStart()
     addEvent(function()
         g_game.getLocalPlayer():attachEffect(AttachedEffectManager.create(1))
         g_game.getLocalPlayer():attachEffect(AttachedEffectManager.create(2))
 
-        onOutfitChange(g_game.getLocalPlayer(), g_game.getLocalPlayer():getOutfit())
+        local angelLight1 = AttachedEffectManager.create(3)
+        local angelLight2 = AttachedEffectManager.create(3)
+        local angelLight3 = AttachedEffectManager.create(3)
+        local angelLight4 = AttachedEffectManager.create(3)
 
+        angelLight1:setOffset(-50, 50, true)
+        angelLight2:setOffset(50, 50, true)
+        angelLight3:setOffset(50, -50, true)
+        angelLight4:setOffset(-50, -50, true)
+
+        g_game.getLocalPlayer():attachEffect(angelLight1)
+        g_game.getLocalPlayer():attachEffect(angelLight2)
+        g_game.getLocalPlayer():attachEffect(angelLight3)
+        g_game.getLocalPlayer():attachEffect(angelLight4)
     end)
 end
 ]] --
@@ -79,7 +90,9 @@ function onDetach(effect, oldOwner)
     local category, thingId = AttachedEffectManager.getDataThing(oldOwner)
     local config = AttachedEffectManager.getConfig(effect:getId(), category, thingId)
 
-    oldOwner:setDisableWalkAnimation(config.disableWalkAnimation or false)
+    if oldOwner:isCreature() and config.disableWalkAnimation then
+        oldOwner:setDisableWalkAnimation(false)
+    end
 
     if config.onDetach then
         config.onDetach(effect, oldOwner, config.__onDetach)

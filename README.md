@@ -8,6 +8,7 @@
 
 ### Based on [edubart/otclient](https://github.com/edubart/otclient) Rev: [2.760](https://github.com/edubart/otclient/commit/fc39ee4adba8e780a2820bfda66fc942d74cedf4)
 
+#### [Note for those using Nostalrius 7.2 or Nekiro TFS-1.5-Downgrades-7.72](https://github.com/mehah/otclient/blob/main/init.lua#L7)
 
 ### Features
 
@@ -15,7 +16,7 @@
 - Refactored/Optimized Rendering System
 - New Light System
 - Auto Reload Module (Set true in [init.lua](https://github.com/mehah/otclient/blob/1026132e3dfa661807a1ff10ced2f4e09f1b7a7d/init.lua#L4) to enable)
-- Attached Effects System (to create aura, wings...) (code sample: [effects.lua](https://github.com/mehah/otclient/blob/main/modules/game_attachedeffects/effects.lua), [outfit_618.lua](https://github.com/mehah/otclient/blob/main/modules/game_attachedeffects/configs/outfit_618.lua))
+- Attached Effects System (to create aura, wings...) (code sample: [effects.lua](https://github.com/mehah/otclient/blob/main/modules/game_attachedeffects/effects.lua), [outfit_618.lua](https://github.com/mehah/otclient/blob/main/modules/game_attachedeffects/configs/outfit_618.lua), [code test](https://github.com/mehah/otclient/blob/main/modules/game_attachedeffects/attachedeffects.lua#L1))
 - Idle Animation Support
 - Highlight Mouse Target (press shift to select any object)
 - Crosshair

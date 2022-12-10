@@ -47,7 +47,7 @@ public:
 
     Creature();
 
-    static bool hasSpeedFormula() { return speedA != 0 && speedB != 0 && speedC != 0; }
+    static bool hasSpeedFormula();
 
     void draw(const Point& dest, bool animate, uint32_t flags, TextureType textureType, bool isMarked = false, LightView* lightView = nullptr) override;
 
@@ -117,7 +117,6 @@ public:
     int getDisplacementY() const override;
     int getExactSize(int layer = 0, int xPattern = 0, int yPattern = 0, int zPattern = 0, int animationPhase = 0) override;
 
-    int getTotalAnimationPhase() { return m_outfit.hasMount() ? m_mountType->getAnimationPhases() : getAnimationPhases(); }
     int getCurrentAnimationPhase(bool mount = false);
 
     bool isDisabledWalkAnimation() { return m_disableWalkAnimation > 0; }

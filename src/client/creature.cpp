@@ -480,7 +480,9 @@ void Creature::updateWalkAnimation()
     if (m_outfit.getCategory() != ThingCategoryCreature)
         return;
 
-    const int footAnimPhases = getTotalAnimationPhase();
+    int footAnimPhases = m_outfit.hasMount() ? m_mountType->getAnimationPhases() : getAnimationPhases();
+    if (!g_game.getFeature(Otc::GameItemAnimationPhase))
+        --footAnimPhases;
 
     // looktype has no animations
     if (footAnimPhases == 0)
@@ -489,7 +491,7 @@ void Creature::updateWalkAnimation()
     int minFootDelay = 20;
     int footAnimDelay = footAnimPhases;
 
-    if (hasSpeedFormula()) {
+    if (g_game.getFeature(Otc::GameItemAnimationPhase)) {
         minFootDelay += 10;
         footAnimDelay /= 1.5;
     }
@@ -575,10 +577,8 @@ void Creature::nextWalkUpdate()
 
 void Creature::updateWalk(const bool isPreWalking)
 {
-    const uint32_t stepDuration = getStepDuration(true);
-
-    const float extraSpeed = isLocalPlayer() && !hasSpeedFormula() ? 800.f / static_cast<float>(stepDuration) : 0.f;
-    const float walkTicksPerPixel = (stepDuration + extraSpeed) / SPRITE_SIZE;
+    const float extraSpeed = hasSpeedFormula() ? 0.f : 10.f;
+    const float walkTicksPerPixel = (getStepDuration(true) + extraSpeed) / SPRITE_SIZE;
 
     const int totalPixelsWalked = std::min<int>((m_walkTimer.ticksElapsed() / walkTicksPerPixel), SPRITE_SIZE);
 
@@ -669,7 +669,7 @@ void Creature::setDirection(Otc::Direction direction)
     else
         m_numPatternX = direction;
 
-    setAttachedEffectDirection(direction);
+    setAttachedEffectDirection(static_cast<Otc::Direction>(m_numPatternX));
 }
 
 void Creature::setOutfit(const Outfit& outfit)
@@ -831,6 +831,8 @@ void Creature::updateShield()
         m_showShieldTexture = true;
 }
 
+bool Creature::hasSpeedFormula() { return g_game.getFeature(Otc::GameNewSpeedLaw) && speedA != 0 && speedB != 0 && speedC != 0; }
+
 uint64_t Creature::getStepDuration(bool ignoreDiagonal, Otc::Direction dir)
 {
     if (isParalyzed())
@@ -857,18 +859,17 @@ uint64_t Creature::getStepDuration(bool ignoreDiagonal, Otc::Direction dir)
             stepDuration = std::floor(stepDuration / m_calculatedStepSpeed);
         } else stepDuration /= m_speed;
 
-        if (FORCE_NEW_WALKING_FORMULA || g_game.getClientVersion() >= 860) {
+        if (g_game.isForcingNewWalkingFormula() || g_game.getClientVersion() >= 860) {
             const int serverBeat = g_game.getServerBeat();
             stepDuration = std::ceil(stepDuration / serverBeat) * serverBeat;
 
             if (isLocalPlayer() && hasSpeedFormula())
                 stepDuration = std::max<double>(stepDuration, 110.f);
-        } else if (isLocalPlayer())
-            stepDuration += 8.f;
+        }
 
         m_stepCache.duration = stepDuration;
         m_stepCache.walkDuration = m_stepCache.duration / SPRITE_SIZE;
-        m_stepCache.diagonalDuration = stepDuration * (g_game.getClientVersion() > 810 || FORCE_NEW_WALKING_FORMULA ? 3 : 2);
+        m_stepCache.diagonalDuration = stepDuration * (g_game.getClientVersion() > 810 || g_game.isForcingNewWalkingFormula() ? 3 : 2);
     }
 
     return ignoreDiagonal ? m_stepCache.duration : m_stepCache.getDuration(m_lastStepDirection);

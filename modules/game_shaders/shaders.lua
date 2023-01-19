@@ -24,7 +24,8 @@ MAP_SHADERS = {{
     frag = 'shaders/fragment/sepia.frag'
 }, {
     name = 'Map - Pulse',
-    frag = 'shaders/fragment/pulse.frag'
+    frag = 'shaders/fragment/pulse.frag',
+    drawViewportEdge = true
 }, {
     name = 'Map - Old Tv',
     frag = 'shaders/fragment/oldtv.frag'
@@ -33,13 +34,16 @@ MAP_SHADERS = {{
     frag = 'shaders/fragment/party.frag'
 }, {
     name = 'Map - Radial Blur',
-    frag = 'shaders/fragment/radialblur.frag'
+    frag = 'shaders/fragment/radialblur.frag',
+    drawViewportEdge = true
 }, {
     name = 'Map - Zomg',
-    frag = 'shaders/fragment/zomg.frag'
+    frag = 'shaders/fragment/zomg.frag',
+    drawViewportEdge = true
 }, {
     name = 'Map - Heat',
-    frag = 'shaders/fragment/heat.frag'
+    frag = 'shaders/fragment/heat.frag',
+    drawViewportEdge = true
 }, {
     name = 'Map - Noise',
     frag = 'shaders/fragment/noise.frag'
@@ -120,15 +124,11 @@ end
 
 function attachShaders()
     local map = modules.game_interface.getMapPanel()
-    map:setMapShader(g_shaders.getShader('Default'))
+    map:setMapShader('Default')
 
     local player = g_game.getLocalPlayer()
-    player:setShader(g_shaders.getShader('Default'))
-    player:setMountShader(g_shaders.getShader('Default'))
-
-    connect(g_game.getLocalPlayer(), {
-        onWalkEnd = onWalkEvent --[[, onAutoWalk = function() end]]
-    })
+    player:setShader('Default')
+    player:setMountShader('Default')
 end
 
 function init()
@@ -146,14 +146,17 @@ function init()
     local mapComboBox = shadersPanel:getChildById('mapComboBox')
     mapComboBox.onOptionChange = function(combobox, option)
         local map = modules.game_interface.getMapPanel()
-        map:setMapShader(g_shaders.getShader(option))
+        map:setMapShader(option)
+
+        local data = combobox:getCurrentOption().data
+        map:setDrawViewportEdge(data.drawViewportEdge == true)
     end
 
     local outfitComboBox = shadersPanel:getChildById('outfitComboBox')
     outfitComboBox.onOptionChange = function(combobox, option)
         local player = g_game.getLocalPlayer()
         if player then
-            player:setShader(g_shaders.getShader(option))
+            player:setShader(option)
             local data = combobox:getCurrentOption().data
             player:setDrawOutfitColor(data.drawColor ~= false)
         end
@@ -163,7 +166,7 @@ function init()
     mountComboBox.onOptionChange = function(combobox, option)
         local player = g_game.getLocalPlayer()
         if player then
-            player:setMountShader(g_shaders.getShader(option))
+            player:setMountShader(option)
         end
     end
 
@@ -173,18 +176,17 @@ function init()
 
         if fragmentShaderPath ~= nil then
             --  local shader = g_shaders.createShader()
-            local shader = g_shaders.createFragmentShader(opts.name, opts.frag)
+            g_shaders.createFragmentShader(opts.name, opts.frag)
 
             if opts.tex1 then
-                shader:addMultiTexture(opts.tex1)
+                g_shaders.addMultiTexture(opts.name, opts.tex1)
             end
             if opts.tex2 then
-                shader:addMultiTexture(opts.tex2)
+                g_shaders.addMultiTexture(opts.name, opts.tex2)
             end
 
             -- Setup proper uniforms
-            g_shaders[method](shader)
-            g_shaders.registerShader(opts.name, shader)
+            g_shaders[method](opts.name)
         end
     end
 
@@ -205,12 +207,6 @@ function init()
 end
 
 function terminate()
-    if g_game.getLocalPlayer() then
-        disconnect(g_game.getLocalPlayer(), {
-            onWalkEnd = onWalkEvent,
-            onAutoWalk = onAutoWalkEvent
-        })
-    end
     disconnect(g_game, {
         onGameStart = attachShaders
     })

@@ -76,7 +76,7 @@ class Item : public Thing
 public:
     static ItemPtr create(int id);
 
-    void draw(const Point& dest, bool animate, uint32_t flags, TextureType textureType = TextureType::NONE, bool isMarked = false, LightView* lightView = nullptr) override;
+    void draw(const Point& dest, uint32_t flags, TextureType textureType = TextureType::NONE, bool isMarked = false, LightView* lightView = nullptr) override;
 
     void setId(uint32_t id) override;
 
@@ -94,42 +94,16 @@ public:
 
     bool isValid() { return getThingType() != nullptr; }
 
-    uint16_t getUniqueId() { return m_attribs.get<uint16_t>(ATTR_UNIQUE_ID, 0); }
-    uint16_t getActionId() { return m_attribs.get<uint16_t>(ATTR_ACTION_ID, 0); }
-    void setActionId(uint16_t actionId) { m_attribs.set(ATTR_ACTION_ID, actionId); }
-    void setUniqueId(uint16_t uniqueId) { m_attribs.set(ATTR_UNIQUE_ID, uniqueId); }
-
-    std::string getText() { return m_attribs.get<std::string>(ATTR_TEXT); }
-    std::string getDescription() { return m_attribs.get<std::string>(ATTR_DESC); }
-    void setDescription(const std::string& desc) { m_attribs.set(ATTR_DESC, desc); }
-    void setText(const std::string& txt) { m_attribs.set(ATTR_TEXT, txt); }
-
-    Position getTeleportDestination() { return m_attribs.get<Position>(ATTR_TELE_DEST); }
-    void setTeleportDestination(const Position& pos) { m_attribs.set(ATTR_TELE_DEST, pos); }
-
     void setAsync(bool enable) { m_async = enable; }
-
-    bool isHouseDoor() { return m_attribs.has(ATTR_HOUSEDOORID); }
-    bool isDepot() { return m_attribs.has(ATTR_DEPOT_ID); }
-    bool isContainer() override { return m_attribs.has(ATTR_CONTAINER_ITEMS) || Thing::isContainer(); }
-    bool isDoor() { return m_attribs.has(ATTR_HOUSEDOORID); }
-    bool isTeleport() { return m_attribs.has(ATTR_TELE_DEST); }
 
     ItemPtr clone();
     ItemPtr asItem() { return static_self_cast<Item>(); }
     bool isItem() override { return true; }
 
-    ItemVector getContainerItems() { return m_containerItems; }
-    ItemPtr getContainerItem(int slot) { return m_containerItems[slot]; }
-    void addContainerItemIndexed(const ItemPtr& i, int slot) { m_containerItems[slot] = i; }
-    void addContainerItem(const ItemPtr& i) { m_containerItems.push_back(i); }
-    void removeContainerItem(int slot) { m_containerItems[slot] = nullptr; }
-    void clearContainerItems() { m_containerItems.clear(); }
-
     void updatePatterns();
-    int calculateAnimationPhase(bool animate);
+    int calculateAnimationPhase();
     int getExactSize(int layer = 0, int xPattern = 0, int yPattern = 0, int zPattern = 0, int animationPhase = 0) override {
-        return Thing::getExactSize(layer, m_numPatternX, m_numPatternY, m_numPatternZ, calculateAnimationPhase(true));
+        return Thing::getExactSize(layer, m_numPatternX, m_numPatternY, m_numPatternZ, calculateAnimationPhase());
     }
 
     void onPositionChange(const Position& /*newPos*/, const Position& /*oldPos*/) override { updatePatterns(); }
@@ -147,19 +121,41 @@ public:
 
     void setDoorId(uint8_t doorId) { m_attribs.set(ATTR_HOUSEDOORID, doorId); }
     uint8_t getDoorId() { return m_attribs.get<uint8_t >(ATTR_HOUSEDOORID, 0); }
+
+    uint16_t getUniqueId() { return m_attribs.get<uint16_t>(ATTR_UNIQUE_ID, 0); }
+    uint16_t getActionId() { return m_attribs.get<uint16_t>(ATTR_ACTION_ID, 0); }
+    void setActionId(uint16_t actionId) { m_attribs.set(ATTR_ACTION_ID, actionId); }
+    void setUniqueId(uint16_t uniqueId) { m_attribs.set(ATTR_UNIQUE_ID, uniqueId); }
+
+    std::string getText() { return m_attribs.get<std::string>(ATTR_TEXT); }
+    std::string getDescription() { return m_attribs.get<std::string>(ATTR_DESC); }
+    void setDescription(const std::string& desc) { m_attribs.set(ATTR_DESC, desc); }
+    void setText(const std::string& txt) { m_attribs.set(ATTR_TEXT, txt); }
+
+    Position getTeleportDestination() { return m_attribs.get<Position>(ATTR_TELE_DEST); }
+    void setTeleportDestination(const Position& pos) { m_attribs.set(ATTR_TELE_DEST, pos); }
+
+    bool isHouseDoor() { return m_attribs.has(ATTR_HOUSEDOORID); }
+    bool isDepot() { return m_attribs.has(ATTR_DEPOT_ID); }
+    bool isContainer() override { return m_attribs.has(ATTR_CONTAINER_ITEMS) || Thing::isContainer(); }
+    bool isDoor() { return m_attribs.has(ATTR_HOUSEDOORID); }
+    bool isTeleport() { return m_attribs.has(ATTR_TELE_DEST); }
+
+    ItemVector getContainerItems() { return m_containerItems; }
+    ItemPtr getContainerItem(int slot) { return m_containerItems[slot]; }
+    void addContainerItemIndexed(const ItemPtr& i, int slot) { m_containerItems[slot] = i; }
+    void addContainerItem(const ItemPtr& i) { m_containerItems.push_back(i); }
+    void removeContainerItem(int slot) { m_containerItems[slot] = nullptr; }
+    void clearContainerItems() { m_containerItems.clear(); }
 #endif
 
 private:
     void createBuffer();
-    void tryOptimize();
 
     uint16_t m_clientId{ 0 };
     uint8_t m_countOrSubType{ 0 };
 
     Color m_color{ Color::white };
-
-    stdext::dynamic_storage<ItemAttr> m_attribs;
-    ItemVector m_containerItems;
 
     uint8_t m_phase{ 0 };
     ticks_t m_lastPhase{ 0 };
@@ -168,6 +164,8 @@ private:
 
 #ifdef FRAMEWORK_EDITOR
     uint16_t m_serverId{ 0 };
+    stdext::dynamic_storage<ItemAttr> m_attribs;
+    ItemVector m_containerItems;
 #endif
 };
 

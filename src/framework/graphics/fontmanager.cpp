@@ -39,7 +39,7 @@ void FontManager::terminate()
 void FontManager::clearFonts()
 {
     m_fonts.clear();
-    m_defaultFont = BitmapFontPtr(new BitmapFont("emptyfont"));
+    m_defaultFont = std::make_shared<BitmapFont>("emptyfont");
 }
 
 bool FontManager::importFont(const std::string& file)
@@ -58,7 +58,7 @@ bool FontManager::importFont(const std::string& file)
             }
         }
 
-        const BitmapFontPtr& font(new BitmapFont(name));
+        const auto& font(std::make_shared<BitmapFont>(name));
         font->load(fontNode);
         m_fonts.push_back(font);
 
@@ -75,7 +75,7 @@ bool FontManager::importFont(const std::string& file)
 
 bool FontManager::fontExists(const std::string_view fontName)
 {
-    for (const BitmapFontPtr& font : m_fonts) {
+    for (const auto& font : m_fonts) {
         if (font->getName() == fontName)
             return true;
     }
@@ -85,7 +85,7 @@ bool FontManager::fontExists(const std::string_view fontName)
 BitmapFontPtr FontManager::getFont(const std::string_view fontName)
 {
     // find font by name
-    for (const BitmapFontPtr& font : m_fonts) {
+    for (const auto& font : m_fonts) {
         if (font->getName() == fontName)
             return font;
     }

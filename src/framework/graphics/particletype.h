@@ -27,13 +27,10 @@
 #include <framework/luaengine/luaobject.h>
 #include <framework/otml/otml.h>
 
-class ParticleType : public LuaObject
+class ParticleType
 {
 public:
-    ParticleType();
-
     void load(const OTMLNodePtr& node);
-
     std::string getName() { return pName; }
 
 protected:

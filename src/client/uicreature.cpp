@@ -22,9 +22,9 @@
 
 #include "uicreature.h"
 
-void UICreature::drawSelf(Fw::DrawPane drawPane)
+void UICreature::drawSelf(DrawPoolType drawPane)
 {
-    if ((drawPane & Fw::ForegroundPane) == 0)
+    if (drawPane != DrawPoolType::FOREGROUND)
         return;
 
     UIWidget::drawSelf(drawPane);
@@ -38,7 +38,7 @@ void UICreature::drawSelf(Fw::DrawPane drawPane)
 void UICreature::setOutfit(const Outfit& outfit)
 {
     if (!m_creature)
-        m_creature = CreaturePtr(new Creature);
+        m_creature = std::make_shared<Creature>();
     m_creature->setDirection(Otc::South);
     m_creature->setOutfit(outfit);
 }

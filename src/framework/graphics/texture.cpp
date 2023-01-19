@@ -24,36 +24,30 @@
 #include "framebuffer.h"
 #include "graphics.h"
 #include "image.h"
-#include <atomic>
 
 #include <framework/core/application.h>
-
+#include <framework/core/eventdispatcher.h>
 #include "framework/stdext/math.h"
 
  // UINT16_MAX = just to avoid conflicts with GL generated ID.
-static std::atomic<uint32_t > UID(UINT16_MAX);
+static std::atomic_uint32_t UID(UINT16_MAX);
 
 Texture::Texture() : m_uniqueId(++UID) {}
 
 Texture::Texture(const Size& size) : m_uniqueId(++UID)
 {
-    m_id = 0;
-    m_time = 0;
-
     if (!setupSize(size))
         return;
 
     createTexture();
     bind();
-    setupPixels(0, m_glSize, nullptr, 4);
+    setupPixels(0, size, nullptr, 4);
     setupWrap();
     setupFilters();
 }
 
 Texture::Texture(const ImagePtr& image, bool buildMipmaps, bool compress, bool canSuperimposed, bool load) : m_uniqueId(++UID)
 {
-    m_id = 0;
-    m_time = 0;
     m_canSuperimposed = canSuperimposed;
     m_compress = compress;
     m_buildMipmaps = buildMipmaps;
@@ -62,6 +56,7 @@ Texture::Texture(const ImagePtr& image, bool buildMipmaps, bool compress, bool c
         uploadPixels(image, m_buildMipmaps, m_compress);
     } else {
         m_image = image;
+        setupSize(image->getSize());
     }
 }
 
@@ -70,9 +65,11 @@ Texture::~Texture()
 #ifndef NDEBUG
     assert(!g_app.isTerminated());
 #endif
-    // free texture from gl memory
-    if (g_graphics.ok() && m_id != 0)
-        glDeleteTextures(1, &m_id);
+    if (g_graphics.ok() && m_id != 0) {
+        g_mainDispatcher.addEvent([id = m_id]() {
+            glDeleteTextures(1, &id);
+        });
+    }
 }
 
 void Texture::create()
@@ -89,23 +86,16 @@ void Texture::uploadPixels(const ImagePtr& image, bool buildMipmaps, bool compre
     if (!setupSize(image->getSize()))
         return;
 
-    ImagePtr glImage;
-    if (m_size != m_glSize) {
-        glImage = ImagePtr(new Image(m_glSize, image->getBpp()));
-        glImage->paste(image);
-    } else
-        glImage = image;
-
     bind();
 
     if (buildMipmaps) {
         int level = 0;
         do {
-            setupPixels(level++, glImage->getSize(), glImage->getPixelData(), glImage->getBpp(), compress);
-        } while (glImage->nextMipmap());
+            setupPixels(level++, image->getSize(), image->getPixelData(), image->getBpp(), compress);
+        } while (image->nextMipmap());
         m_hasMipmaps = true;
     } else
-        setupPixels(0, glImage->getSize(), glImage->getPixelData(), glImage->getBpp(), compress);
+        setupPixels(0, image->getSize(), image->getPixelData(), image->getBpp(), compress);
 
     setupWrap();
     setupFilters();
@@ -163,6 +153,7 @@ void Texture::setUpsideDown(bool upsideDown)
 {
     if (m_upsideDown == upsideDown)
         return;
+
     m_upsideDown = upsideDown;
     setupTranformMatrix();
 }
@@ -178,20 +169,16 @@ void Texture::createTexture()
 
 bool Texture::setupSize(const Size& size)
 {
-    Size glSize;
-    glSize.resize(stdext::to_power_of_two(size.width()), stdext::to_power_of_two(size.height()));
-
     // checks texture max size
-    if (std::max<int>(glSize.width(), glSize.height()) > g_graphics.getMaxTextureSize()) {
+    if (std::max<int>(size.width(), size.height()) > g_graphics.getMaxTextureSize()) {
         g_logger.error(stdext::format("loading texture with size %dx%d failed, "
-                                      "the maximum size allowed by the graphics card is %dx%d,"
-                                      "to prevent crashes the texture will be displayed as a blank texture",
-                                      size.width(), size.height(), g_graphics.getMaxTextureSize(), g_graphics.getMaxTextureSize()));
+                       "the maximum size allowed by the graphics card is %dx%d,"
+                       "to prevent crashes the texture will be displayed as a blank texture",
+                       size.width(), size.height(), g_graphics.getMaxTextureSize(), g_graphics.getMaxTextureSize()));
         return false;
     }
 
     m_size = size;
-    m_glSize = glSize;
 
     setupTranformMatrix();
 
@@ -223,13 +210,13 @@ void Texture::setupFilters()
 void Texture::setupTranformMatrix()
 {
     if (m_upsideDown) {
-        m_transformMatrix = { 1.0f / m_glSize.width(), 0.0f,                                                    0.0f,
-                              0.0f,                   -1.0f / m_glSize.height(),                                0.0f,
-                              0.0f,                    m_size.height() / static_cast<float>(m_glSize.height()), 1.0f };
+        m_transformMatrix = { 1.0f / m_size.width(), 0.0f,                                                  0.0f,
+                              0.0f,                 -1.0f / m_size.height(),                                0.0f,
+                              0.0f,                  m_size.height() / static_cast<float>(m_size.height()), 1.0f };
     } else {
-        m_transformMatrix = { 1.0f / m_glSize.width(), 0.0f,                     0.0f,
-                              0.0f,                    1.0f / m_glSize.height(), 0.0f,
-                              0.0f,                    0.0f,                     1.0f };
+        m_transformMatrix = { 1.0f / m_size.width(), 0.0f,                     0.0f,
+                              0.0f,                  1.0f / m_size.height(),   0.0f,
+                              0.0f,                  0.0f,                     1.0f };
     }
 }
 

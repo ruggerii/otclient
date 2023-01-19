@@ -32,6 +32,8 @@
 #include <framework/graphics/texture.h>
 #include <framework/graphics/texturemanager.h>
 
+#include <framework/core/eventdispatcher.h>
+
 #include <atomic>
 
 void UIWidget::initBaseStyle()
@@ -264,13 +266,13 @@ void UIWidget::parseBaseStyle(const OTMLNodePtr& styleNode)
             if (!layoutType.empty()) {
                 UILayoutPtr layout;
                 if (layoutType == "horizontalBox")
-                    layout = UIHorizontalLayoutPtr(new UIHorizontalLayout(static_self_cast<UIWidget>()));
+                    layout = std::make_shared<UIHorizontalLayout>(static_self_cast<UIWidget>());
                 else if (layoutType == "verticalBox")
-                    layout = UIVerticalLayoutPtr(new UIVerticalLayout(static_self_cast<UIWidget>()));
+                    layout = std::make_shared<UIVerticalLayout>(static_self_cast<UIWidget>());
                 else if (layoutType == "grid")
-                    layout = UIGridLayoutPtr(new UIGridLayout(static_self_cast<UIWidget>()));
+                    layout = std::make_shared<UIGridLayout>(static_self_cast<UIWidget>());
                 else if (layoutType == "anchor")
-                    layout = UIAnchorLayoutPtr(new UIAnchorLayout(static_self_cast<UIWidget>()));
+                    layout = std::make_shared<UIAnchorLayout>(static_self_cast<UIWidget>());
                 else
                     throw OTMLException(node, "cannot determine layout type");
                 setLayout(layout);
@@ -386,9 +388,12 @@ void UIWidget::drawIcon(const Rect& screenCoords)
 
 void UIWidget::setIcon(const std::string& iconFile)
 {
-    m_icon = iconFile.empty() ? nullptr : g_textures.getTexture(iconFile);
-    if (m_icon && !m_iconClipRect.isValid())
-        m_iconClipRect = Rect(0, 0, m_icon->getSize());
+    g_mainDispatcher.addEvent([&, iconFile = iconFile]() {
+        m_icon = iconFile.empty() ? nullptr : g_textures.getTexture(iconFile);
+        if (m_icon && !m_iconClipRect.isValid()) {
+            m_iconClipRect = Rect(0, 0, m_icon->getSize());
+        }
 
-    repaint();
+        repaint();
+    });
 }

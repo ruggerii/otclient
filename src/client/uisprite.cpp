@@ -27,9 +27,9 @@
 #include "framework/graphics/drawpoolmanager.h"
 #include "framework/graphics/drawpool.h"
 
-void UISprite::drawSelf(Fw::DrawPane drawPane)
+void UISprite::drawSelf(DrawPoolType drawPane)
 {
-    if ((drawPane & Fw::ForegroundPane) == 0)
+    if (drawPane != DrawPoolType::FOREGROUND)
         return;
 
     // draw style components in order
@@ -61,7 +61,7 @@ void UISprite::setSpriteId(int id)
     else {
         const auto& image = g_sprites.getSpriteImage(id);
         if (image)
-            m_sprite = new Texture(image);
+            m_sprite = std::make_shared<Texture>(image);
         else
             m_sprite = nullptr;
     }

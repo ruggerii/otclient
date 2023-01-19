@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -123,7 +123,7 @@
     </Link>
     <PreBuildEvent>
       <Command>if NOT EXIST "../src/protobuf/appearances.pb.cc" (
-cmd /c "$(VcpkgRoot)\installed\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=../src/protobuf/ --proto_path=../src/protobuf/ appearances.proto
+cmd /c "start ../vcpkg_installed\$(VcpkgTriplet)\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=../src/protobuf/ --proto_path=../src/protobuf/ appearances.proto
 )</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -142,7 +142,7 @@ cmd /c "$(VcpkgRoot)\installed\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=
     </Link>
     <PreBuildEvent>
       <Command>if NOT EXIST "../src/protobuf/appearances.pb.cc" (
-cmd /c "$(VcpkgRoot)\installed\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=../src/protobuf/ --proto_path=../src/protobuf/ appearances.proto
+cmd /c "start ../vcpkg_installed\$(VcpkgTriplet)\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=../src/protobuf/ --proto_path=../src/protobuf/ appearances.proto
 )</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -183,12 +183,12 @@ cmd /c "$(VcpkgRoot)\installed\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=
 	  vorbis.lib;
 	  vorbisfile.lib;
 	  zlib.lib;
+	  winmm.lib
 	  </AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>
-if NOT EXIST "../src/protobuf/appearances.pb.cc" (
-	cmd /c "$(VcpkgRoot)\installed\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=../src/protobuf/ --proto_path=../src/protobuf/ appearances.proto
+      <Command>if NOT EXIST "../src/protobuf/appearances.pb.cc" (
+	cmd /c "start ../vcpkg_installed\$(VcpkgTriplet)\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=../src/protobuf/ --proto_path=../src/protobuf/ appearances.proto
 )
 WHERE git
 IF %ERRORLEVEL% EQU 0 (
@@ -242,12 +242,12 @@ IF %ERRORLEVEL% EQU 0 (
 	  vorbis.lib;
 	  vorbisfile.lib;
 	  zlib.lib;
+	  winmm.lib
 	  </AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>
-if NOT EXIST "../src/protobuf/appearances.pb.cc" (
-	cmd /c "$(VcpkgRoot)\installed\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=../src/protobuf/ --proto_path=../src/protobuf/ appearances.proto
+      <Command>if NOT EXIST "../src/protobuf/appearances.pb.cc" (
+	cmd /c "start ../vcpkg_installed\$(VcpkgTriplet)\$(VcpkgTriplet)\tools\protobuf\protoc" --cpp_out=../src/protobuf/ --proto_path=../src/protobuf/ appearances.proto
 )
 WHERE git
 IF %ERRORLEVEL% EQU 0 (
@@ -326,6 +326,7 @@ IF %ERRORLEVEL% EQU 0 (
     <ClCompile Include="..\src\framework\core\resourcemanager.cpp" />
     <ClCompile Include="..\src\framework\core\scheduledevent.cpp" />
     <ClCompile Include="..\src\framework\core\timer.cpp" />
+    <ClCompile Include="..\src\framework\discord\discord.cpp" />
     <ClCompile Include="..\src\framework\graphics\animatedtexture.cpp" />
     <ClCompile Include="..\src\framework\graphics\apngloader.cpp" />
     <ClCompile Include="..\src\framework\graphics\bitmapfont.cpp" />
@@ -479,6 +480,7 @@ IF %ERRORLEVEL% EQU 0 (
     <ClInclude Include="..\src\framework\core\resourcemanager.h" />
     <ClInclude Include="..\src\framework\core\scheduledevent.h" />
     <ClInclude Include="..\src\framework\core\timer.h" />
+    <ClInclude Include="..\src\framework\discord\discord.h" />
     <ClInclude Include="..\src\framework\global.h" />
     <ClInclude Include="..\src\framework\graphics\animatedtexture.h" />
     <ClInclude Include="..\src\framework\graphics\apngloader.h" />
@@ -555,8 +557,6 @@ IF %ERRORLEVEL% EQU 0 (
     <ClInclude Include="..\src\framework\stdext\math.h" />
     <ClInclude Include="..\src\framework\stdext\net.h" />
     <ClInclude Include="..\src\framework\stdext\storage.h" />
-    <ClInclude Include="..\src\framework\stdext\shared_object.h" />
-    <ClInclude Include="..\src\framework\stdext\shared_ptr.h" />
     <ClInclude Include="..\src\framework\stdext\stdext.h" />
     <ClInclude Include="..\src\framework\stdext\string.h" />
     <ClInclude Include="..\src\framework\stdext\time.h" />

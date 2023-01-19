@@ -45,9 +45,9 @@ public:
     int getMaxFps() { return m_frameCounter.getMaxFps(); }
 
     bool isOnInputEvent() { return m_onInputEvent; }
-    bool mustOptimize(bool critical = false) {
+    bool mustOptimize() {
 #ifdef NDEBUG
-        return critical && m_forceCriticalOptimization || m_optimize && getCPUInterval() > (critical ? 15000u : 8000u);
+        return m_optimize && getMaxFps() >= getFps() && getFps() < 58;
 #else
         return false;
 #endif
@@ -60,12 +60,10 @@ public:
     void setDrawEffectOnTop(const bool draw) { m_drawEffectOnTop = draw; }
     bool isDrawingEffectsOnTop() { return m_drawEffectOnTop || mustOptimize(); }
 
+    void setDrawTexts(bool v) { m_drawText = v; }
+    bool isDrawingTexts();
+
     void repaint();
-
-    void updateCPUInterval() { m_frameCounter.updateCPUInterval(); }
-    uint32_t getCPUInterval() const { return m_frameCounter.getCPUInterval(); }
-
-    void forceCriticalOptimization(bool force) { m_forceCriticalOptimization = force; }
 
 protected:
     void resize(const Size& size);
@@ -76,7 +74,7 @@ private:
     bool m_optimize{ true };
     bool m_forceEffectOptimization{ false };
     bool m_drawEffectOnTop{ false };
-    bool m_forceCriticalOptimization{ false };
+    bool m_drawText{ true };
 
     AdaptativeFrameCounter m_frameCounter;
 };

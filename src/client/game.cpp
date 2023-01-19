@@ -69,7 +69,7 @@ void Game::resetGameStates()
     m_nextScheduledDir = Otc::InvalidDirection;
 
     for (const auto& it : m_containers) {
-        const ContainerPtr& container = it.second;
+        const auto& container = it.second;
         if (container)
             container->onClose();
     }
@@ -185,7 +185,7 @@ void Game::processGameStart()
             g_lua.callGlobalField("g_game", "onConnectionFailing", false);
             m_connectionFailWarned = false;
         }
-        }, 1000);
+    }, 1000);
 }
 
 void Game::processGameEnd()
@@ -277,8 +277,9 @@ void Game::processTalk(const std::string_view name, int level, Otc::MessageMode 
 
 void Game::processOpenContainer(int containerId, const ItemPtr& containerItem, const std::string_view name, int capacity, bool hasParent, const std::vector<ItemPtr>& items, bool isUnlocked, bool hasPages, int containerSize, int firstIndex)
 {
-    const ContainerPtr previousContainer = getContainer(containerId);
-    const auto container = ContainerPtr(new Container(containerId, capacity, name, containerItem, hasParent, isUnlocked, hasPages, containerSize, firstIndex));
+    const auto& container(ContainerPtr(new Container(containerId, capacity, name, containerItem, hasParent, isUnlocked, hasPages, containerSize, firstIndex)));
+    const auto previousContainer = getContainer(containerId);
+
     m_containers[containerId] = container;
     container->onAddItems(items);
 
@@ -398,20 +399,22 @@ void Game::processRemoveAutomapFlag(const Position& pos, int icon, const std::st
 }
 
 void Game::processOpenOutfitWindow(const Outfit& currentOutfit, const std::vector<std::tuple<int, std::string, int> >& outfitList,
-    const std::vector<std::tuple<int, std::string> >& mountList)
+                                   const std::vector<std::tuple<int, std::string> >& mountList)
 {
     // create virtual creature outfit
-    const auto virtualOutfitCreature = CreaturePtr(new Creature);
+    const auto& virtualOutfitCreature = std::make_shared<Creature>();
     virtualOutfitCreature->setDirection(Otc::South);
     virtualOutfitCreature->setOutfit(currentOutfit);
+    for (const auto& effect : m_localPlayer->getAttachedEffects())
+        virtualOutfitCreature->attachEffect(effect->clone());
 
     // creature virtual mount outfit
     CreaturePtr virtualMountCreature;
-    if (getFeature(Otc::GamePlayerMounts) && currentOutfit.hasMount()) {
+    if (getFeature(Otc::GamePlayerMounts)) {
         Outfit mountOutfit;
         mountOutfit.setId(currentOutfit.getMount());
 
-        virtualMountCreature = CreaturePtr(new Creature);
+        virtualMountCreature = std::make_shared<Creature>();
         virtualMountCreature->setDirection(Otc::South);
         virtualMountCreature->setOutfit(mountOutfit);
     }
@@ -470,8 +473,8 @@ void Game::processQuestLine(int questId, const std::vector<std::tuple<std::strin
 }
 
 void Game::processModalDialog(uint32_t id, const std::string_view title, const std::string_view message, const std::vector<std::tuple<int, std::string> >
-    & buttonList, int enterButton, int escapeButton, const std::vector<std::tuple<int, std::string> >
-    & choiceList, bool priority)
+                              & buttonList, int enterButton, int escapeButton, const std::vector<std::tuple<int, std::string> >
+                              & choiceList, bool priority)
 {
     g_lua.callGlobalField("g_game", "onModalDialog", id, title, message, buttonList, enterButton, escapeButton, choiceList, priority);
 }
@@ -498,10 +501,10 @@ void Game::loginWorld(const std::string_view account, const std::string_view pas
     // reset the new game state
     resetGameStates();
 
-    m_localPlayer = LocalPlayerPtr(new LocalPlayer);
+    m_localPlayer = std::make_shared<LocalPlayer>();
     m_localPlayer->setName(characterName);
 
-    m_protocolGame = ProtocolGamePtr(new ProtocolGame);
+    m_protocolGame = std::make_shared<ProtocolGame>();
     m_protocolGame->login(account, password, worldHost, static_cast<uint16_t>(worldPort), characterName, authenticatorToken, sessionKey);
     m_characterName = characterName;
     m_worldName = worldName;
@@ -568,6 +571,7 @@ bool Game::walk(const Otc::Direction direction, bool isKeyDown /*= false*/)
     }
 
     m_nextScheduledDir = Otc::InvalidDirection;
+
     // if it's going to walk, but there is another scheduled event, cancel it
     if (m_walkEvent && !m_walkEvent->isExecuted()) {
         m_walkEvent->cancel();
@@ -771,6 +775,14 @@ void Game::rotate(const ThingPtr& thing)
         return;
 
     m_protocolGame->sendRotateItem(thing->getPosition(), thing->getId(), thing->getStackPos());
+}
+
+void Game::wrap(const ThingPtr& thing)
+{
+    if (!canPerformGameAction() || !thing)
+        return;
+
+    m_protocolGame->sendOnWrapItem(thing->getPosition(), thing->getId(), thing->getStackPos());
 }
 
 void Game::use(const ThingPtr& thing)
@@ -1750,6 +1762,9 @@ void Game::setAttackingCreature(const CreaturePtr& creature)
 
 void Game::setFollowingCreature(const CreaturePtr& creature)
 {
+    if (creature == m_followingCreature)
+        return;
+
     const CreaturePtr oldCreature = m_followingCreature;
     m_followingCreature = creature;
 
@@ -1779,7 +1794,6 @@ int Game::findEmptyContainerId()
 {
     int id = -1;
     while (m_containers[++id] != nullptr);
-
     return id;
 }
 

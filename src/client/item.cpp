@@ -33,32 +33,30 @@
 #include <framework/core/clock.h>
 #include <framework/core/eventdispatcher.h>
 #include <framework/core/filestream.h>
+#include <framework/core/graphicalapplication.h>
 
 #include "shadermanager.h"
 
 ItemPtr Item::create(int id)
 {
-    const ItemPtr& item(new Item);
+    const auto& item = std::make_shared<Item>();
     item->setId(id);
 
     return item;
 }
 
-void Item::draw(const Point& dest, bool animate, uint32_t flags, TextureType textureType, bool isMarked, LightView* lightView)
+void Item::draw(const Point& dest, uint32_t flags, TextureType textureType, bool isMarked, LightView* lightView)
 {
     if (m_clientId == 0 || !canDraw())
         return;
 
     // determine animation phase
-    const int animationPhase = calculateAnimationPhase(animate);
-
-    tryOptimize();
+    const int animationPhase = calculateAnimationPhase();
 
     drawAttachedEffect(dest, lightView, false); // On Bottom
-    getThingType()->draw(dest, 0, m_numPatternX, m_numPatternY, m_numPatternZ, animationPhase, flags, textureType, m_color, lightView, m_drawBuffer);
-    if (textureType != TextureType::ALL_BLANK && m_shader) {
+    if (textureType != TextureType::ALL_BLANK && m_shader)
         g_drawPool.setShaderProgram(m_shader, true, m_shaderAction);
-    }
+    getThingType()->draw(dest, 0, m_numPatternX, m_numPatternY, m_numPatternZ, animationPhase, flags, textureType, m_color, lightView, m_drawBuffer);
     drawAttachedEffect(dest, lightView, true); // On Top
 
     if (isMarked) {
@@ -74,21 +72,8 @@ void Item::createBuffer()
         order = DrawPool::DrawOrder::FIRST;
     else if (isSingleGroundBorder() && !hasElevation())
         order = DrawPool::DrawOrder::SECOND;
-    else if ((isCommon() || isOnBottom()) && isSingleDimension() && !hasDisplacement() && isNotMoveable())
-        order = DrawPool::DrawOrder::THIRD;
 
     m_drawBuffer = order != DrawPool::DrawOrder::NONE ? std::make_shared<DrawBuffer>(order) : nullptr;
-}
-
-void Item::tryOptimize()
-{
-    if (g_app.mustOptimize(!isTopGround())) {
-        if (!m_drawBuffer) {
-            m_drawBuffer = std::make_shared<DrawBuffer>(DrawPool::DrawOrder::THIRD, true, false);
-        }
-    } else if (m_drawBuffer && !m_drawBuffer->isStatic()) {
-        m_drawBuffer->agroup(false);
-    }
 }
 
 void Item::setPosition(const Position& position, uint8_t stackPos, bool hasElevation)
@@ -112,7 +97,7 @@ int Item::getSubType()
 
 ItemPtr Item::clone()
 {
-    auto item = ItemPtr(new Item);
+    auto item = std::make_shared<Item>();
     *(item.get()) = *this;
     return item;
 }
@@ -231,11 +216,9 @@ void Item::updatePatterns()
     }
 }
 
-int Item::calculateAnimationPhase(bool animate)
+int Item::calculateAnimationPhase()
 {
     if (!hasAnimationPhases()) return 0;
-
-    if (!animate) return getAnimationPhases() - 1;
 
     if (getIdleAnimator()) return getIdleAnimator()->getPhase();
 
@@ -287,7 +270,7 @@ std::string Item::getName()
 
 ItemPtr Item::createFromOtb(int id)
 {
-    const ItemPtr& item(new Item);
+    const auto& item = std::make_shared<Item>();
     item->setOtbId(id);
 
     return item;

@@ -34,7 +34,7 @@ public:
     UIMap();
     ~UIMap() override;
 
-    void drawSelf(Fw::DrawPane drawPane) override;
+    void drawSelf(DrawPoolType drawPane) override;
 
     void movePixels(int x, int y);
     void followCreature(const CreaturePtr& creature) { m_mapView->followCreature(creature); }
@@ -45,21 +45,20 @@ public:
     void unlockVisibleFloor() { m_mapView->unlockFirstVisibleFloor(); }
     void setVisibleDimension(const Size& visibleDimension);
     void setFloorViewMode(MapView::FloorViewMode viewMode) { m_mapView->setFloorViewMode(viewMode); }
-    void setDrawTexts(bool enable) { m_mapView->setDrawTexts(enable); }
     void setDrawNames(bool enable) { m_mapView->setDrawNames(enable); }
     void setDrawHealthBars(bool enable) { m_mapView->setDrawHealthBars(enable); }
     void setDrawLights(bool enable) { m_mapView->setDrawLights(enable); }
     void setLimitVisibleDimension(bool enable) { m_mapView->setLimitVisibleDimension(enable); updateVisibleDimension(); }
     void setDrawManaBar(bool enable) { m_mapView->setDrawManaBar(enable); }
     void setKeepAspectRatio(bool enable);
-    void setMapShader(const PainterShaderProgramPtr& shader, float fadein, float fadeout) { m_mapView->setShader(shader, fadein, fadeout); }
+    void setMapShader(const std::string_view name, float fadein, float fadeout) { m_mapView->setShader(name, fadein, fadeout); }
     void setMinimumAmbientLight(float intensity) { m_mapView->setMinimumAmbientLight(intensity); }
     void setLimitVisibleRange(bool limitVisibleRange) { m_limitVisibleRange = limitVisibleRange; updateVisibleDimension(); }
+    void setDrawViewportEdge(bool force) { m_mapView->m_forceDrawViewportEdge = force; m_mapView->m_visibleDimension = {}; updateVisibleDimension(); }
 
     bool zoomIn();
     bool zoomOut();
     bool setZoom(int zoom);
-    bool isDrawingTexts() { return m_mapView->isDrawingTexts(); }
     bool isDrawingNames() { return m_mapView->isDrawingNames(); }
     bool isDrawingHealthBars() { return m_mapView->isDrawingHealthBars(); }
     bool isDrawingLights() { return m_mapView->isDrawingLights(); }

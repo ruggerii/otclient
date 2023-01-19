@@ -32,8 +32,8 @@ void Missile::drawMissile(const Point& dest, LightView* lightView)
         return;
 
     const float fraction = m_animationTimer.ticksElapsed() / m_duration;
-    getThingType()->draw(dest + m_delta * fraction * g_sprites.getScaleFactor(), 0, m_numPatternX, m_numPatternY, 0, 0,
-        Otc::DrawThings | Otc::DrawLights, TextureType::NONE, Color::white, lightView, m_drawBuffer);
+    getThingType()->draw(dest + m_delta * fraction * g_drawPool.getScaleFactor(), 0, m_numPatternX, m_numPatternY, 0, 0,
+                         Otc::DrawThings | Otc::DrawLights, TextureType::NONE, Color::white, lightView, m_drawBuffer);
 }
 
 void Missile::setPath(const Position& fromPosition, const Position& toPosition)
@@ -43,7 +43,7 @@ void Missile::setPath(const Position& fromPosition, const Position& toPosition)
 
     const float deltaLength = m_delta.length();
     if (deltaLength == 0) {
-        g_map.removeThing(this);
+        g_map.removeThing(asMissile());
         return;
     }
 

@@ -22,21 +22,22 @@
 
 #pragma once
 
-#include <framework/ui/uiwidget.h>
+#include <client/config.h>
 
-class UIParticles : public UIWidget
+#if ENABLE_DISCORD_RPC == 1
+
+#include <discord_register.h>
+#include <discord_rpc.h>
+
+class Discord
 {
 public:
-    void drawSelf(DrawPoolType drawPane) override;
-
-    void addEffect(const std::string_view name);
-
-    void onStyleApply(const std::string_view styleName, const OTMLNodePtr& styleNode) override;
-
-    void setReferencePos(const PointF& point) { m_referencePos = point; }
-    PointF getReferencePos() { return m_referencePos; }
+    void init();
 
 private:
-    std::vector<ParticleEffectPtr> m_effects;
-    PointF m_referencePos{ -1, -1 };
+    void update();
 };
+
+extern Discord g_discord;
+
+#endif

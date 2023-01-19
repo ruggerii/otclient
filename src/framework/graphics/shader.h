@@ -26,16 +26,16 @@
 
 enum class ShaderType
 {
-    VERTEX,
-    FRAGMENT
+    VERTEX = GL_VERTEX_SHADER,
+    FRAGMENT = GL_FRAGMENT_SHADER
 };
 
-class Shader : public stdext::shared_object
+class Shader
 {
 public:
 
     Shader(ShaderType shaderType);
-    ~Shader() override;
+    ~Shader();
 
     bool compileSourceCode(const std::string_view sourceCode);
     bool compileSourceFile(const std::string_view sourceFile);

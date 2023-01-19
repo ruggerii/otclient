@@ -21,8 +21,10 @@
  */
 
 #include "graphicalapplication.h"
+#include <client/map.h>
 #include <framework/core/clock.h>
 #include <framework/core/eventdispatcher.h>
+#include <framework/graphics/drawpool.h>
 #include <framework/graphics/drawpoolmanager.h>
 #include <framework/graphics/graphics.h>
 #include <framework/graphics/particlemanager.h>
@@ -30,8 +32,9 @@
 #include <framework/input/mouse.h>
 #include <framework/platform/platformwindow.h>
 #include <framework/ui/uimanager.h>
-
 #include "framework/stdext/time.h"
+#include <framework/core/asyncdispatcher.h>
+#include <thread>
 
 #ifdef FRAMEWORK_SOUND
 #include <framework/sound/soundmanager.h>
@@ -46,9 +49,18 @@ void GraphicalApplication::init(std::vector<std::string>& args)
     // setup platform window
     g_window.init();
     g_window.hide();
-    g_window.setOnResize([this](auto&& PH1) { resize(std::forward<decltype(PH1)>(PH1)); });
-    g_window.setOnInputEvent([this](auto&& PH1) { inputEvent(std::forward<decltype(PH1)>(PH1)); });
-    g_window.setOnClose([this] { close(); });
+
+    g_window.setOnResize([this](auto&& PH1) {
+        if (!m_running) resize(PH1);
+        else g_dispatcher.addEvent([&, PH1] { resize(PH1); });
+    });
+
+    g_window.setOnInputEvent([this](auto&& PH1) {
+        if (!m_running) inputEvent(PH1);
+        else g_dispatcher.addEvent([&, PH1]() { inputEvent(PH1); });
+    });
+
+    g_window.setOnClose([this] { g_dispatcher.addEvent([&]() { close(); }); });
 
     g_mouse.init();
 
@@ -66,6 +78,8 @@ void GraphicalApplication::init(std::vector<std::string>& args)
     // initialize sound
     g_sounds.init();
 #endif
+
+    m_frameCounter.init();
 }
 
 void GraphicalApplication::deinit()
@@ -104,75 +118,93 @@ void GraphicalApplication::terminate()
 
 void GraphicalApplication::run()
 {
-    m_running = true;
-
-    // first clock update
-    g_clock.update();
-
     // run the first poll
     poll();
-    g_clock.update();
+    Application::poll();
 
     // show window
     g_window.show();
 
     // run the second poll
     poll();
-    g_clock.update();
+    Application::poll();
 
     g_lua.callGlobalField("g_app", "onRun");
 
     const auto& foreground = g_drawPool.get<DrawPool>(DrawPoolType::FOREGROUND);
+    const auto& txt = g_drawPool.get<DrawPool>(DrawPoolType::TEXT);
     const auto& map = g_drawPool.get<DrawPool>(DrawPoolType::MAP);
 
-    Timer foregroundRefresh;
+    std::condition_variable foreCondition, txtCondition;
+    std::jthread t1([&](std::stop_token st) {
+        Timer foregroundRefresh;
 
-    while (!m_stopping) {
-        g_clock.update();
+        while (!st.stop_requested()) {
+            g_particles.poll();
+            Application::poll();
 
-        // poll all events before rendering
-        poll();
+            if (!g_window.isVisible()) {
+                stdext::millisleep(10);
+                continue;
+            }
 
-        if (!g_window.isVisible()) {
-            // sleeps until next poll to avoid massive cpu usage
-            stdext::millisleep(1);
-            continue;
-        }
-
-        m_frameCounter.start();
-
-        // the screen consists of two panes
-        {
             if (foregroundRefresh.ticksElapsed() >= 100) { // 10 FPS (1000 / 10)
                 foreground->repaint();
                 foregroundRefresh.restart();
             }
 
-            // foreground pane - steady pane with few animated stuff (UI)
             if (foreground->canRepaint()) {
-                g_drawPool.use(DrawPoolType::FOREGROUND);
-                g_ui.render(Fw::ForegroundPane);
+                foreCondition.notify_one();
             }
 
-            // background pane - high updated and animated pane (where the game are stuff happens)
-            g_ui.render(Fw::BackgroundPane);
-
-            // force map repaint if vsync is enabled or maxFPS set.
-            if (g_window.vsyncEnabled() || getMaxFps() > 0) {
-                map->repaint();
+            txt->setEnable(isDrawingTexts());
+            if (txt->isEnabled()) {
+                txtCondition.notify_one();
             }
+
+            {
+                std::scoped_lock l(map->getMutex());
+                g_ui.render(DrawPoolType::MAP);
+            }
+
+            stdext::millisleep(1);
+        }
+    });
+
+    std::jthread t2([&](std::stop_token st) {
+        std::unique_lock lock(foreground->getMutex());
+        foreCondition.wait(lock, [&]() -> bool {
+            g_ui.render(DrawPoolType::FOREGROUND);
+            return st.stop_requested();
+        });
+    });
+
+    std::jthread t3([&](std::stop_token st) {
+        std::unique_lock lock(txt->getMutex());
+        txtCondition.wait(lock, [&]() -> bool {
+            g_ui.render(DrawPoolType::TEXT);
+            return st.stop_requested();
+        });
+    });
+
+    m_running = true;
+    while (!m_stopping) {
+        poll();
+
+        if (!g_window.isVisible()) {
+            stdext::millisleep(10);
+            continue;
         }
 
-        // Draw All Pools
         g_drawPool.draw();
 
         // update screen pixels
         g_window.swapBuffers();
-
-        if (m_frameCounter.update()) {
-            g_lua.callGlobalField("g_app", "onFps", m_frameCounter.getFps());
-        }
+        m_frameCounter.update();
     }
+
+    foreCondition.notify_one();
+    txtCondition.notify_one();
 
     m_stopping = false;
     m_running = false;
@@ -180,16 +212,16 @@ void GraphicalApplication::run()
 
 void GraphicalApplication::poll()
 {
+    g_clock.update();
+
 #ifdef FRAMEWORK_SOUND
     g_sounds.poll();
 #endif
 
     // poll window input events
     g_window.poll();
-    g_particles.poll();
     g_textures.poll();
-
-    Application::poll();
+    g_mainDispatcher.poll();
 }
 
 void GraphicalApplication::close()
@@ -202,12 +234,12 @@ void GraphicalApplication::close()
 void GraphicalApplication::resize(const Size& size)
 {
     m_onInputEvent = true;
-    g_graphics.resize(size);
+    g_mainDispatcher.addEvent([=, this] {
+        g_graphics.resize(size);
+        g_drawPool.get<DrawPoolFramed>(DrawPoolType::FOREGROUND)->resize(size);
+    });
     g_ui.resize(size);
     m_onInputEvent = false;
-
-    g_drawPool.get<DrawPoolFramed>(DrawPoolType::FOREGROUND)
-        ->resize(size);
 }
 
 void GraphicalApplication::inputEvent(const InputEvent& event)
@@ -218,3 +250,4 @@ void GraphicalApplication::inputEvent(const InputEvent& event)
 }
 
 void GraphicalApplication::repaint() { g_drawPool.get<DrawPool>(DrawPoolType::FOREGROUND)->repaint(); }
+bool GraphicalApplication::isDrawingTexts() { return m_drawText && (!g_map.getStaticTexts().empty() || !g_map.getAnimatedTexts().empty()); }

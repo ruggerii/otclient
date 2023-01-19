@@ -48,7 +48,7 @@ namespace
 
 void Logger::log(Fw::LogLevel level, const std::string_view message)
 {
-    std::lock_guard lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
 #ifdef NDEBUG
     if (level == Fw::LogDebug)
@@ -97,7 +97,7 @@ void Logger::log(Fw::LogLevel level, const std::string_view message)
 
 void Logger::logFunc(Fw::LogLevel level, const std::string_view message, const std::string_view prettyFunction)
 {
-    std::lock_guard lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     auto fncName = prettyFunction.substr(0, prettyFunction.find_first_of('('));
     if (fncName.find_last_of(' ') != std::string::npos)
@@ -117,7 +117,7 @@ void Logger::logFunc(Fw::LogLevel level, const std::string_view message, const s
 
 void Logger::fireOldMessages()
 {
-    std::lock_guard lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     if (m_onLog) {
         for (const LogMessage& logMessage : m_logMessages) {
@@ -128,7 +128,7 @@ void Logger::fireOldMessages()
 
 void Logger::setLogFile(const std::string_view file)
 {
-    std::lock_guard lock(m_mutex);
+    std::scoped_lock lock(m_mutex);
 
     m_outFile.open(stdext::utf8_to_latin1(file), std::ios::out | std::ios::app);
     if (!m_outFile.is_open() || !m_outFile.good()) {

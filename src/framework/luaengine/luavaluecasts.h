@@ -157,7 +157,7 @@ bool luavalue_cast(int index, LuaObjectPtr& obj);
 
 template<class T>
 std::enable_if_t<std::is_base_of_v<LuaObject, T>, bool>
-luavalue_cast(int index, stdext::shared_object_ptr<T>& ptr);
+luavalue_cast(int index, std::shared_ptr<T>& ptr);
 
 // std::function
 template<typename Ret, typename... Args>
@@ -192,11 +192,11 @@ template<typename T>
 bool luavalue_cast(int index, std::deque<T>& vec);
 
 // map
-template<class K, class V>
-int push_luavalue(const std::map<K, V>& map);
+template<class K, class V, class H>
+int push_luavalue(const stdext::map<K, V, H>& map);
 
-template<class K, class V>
-bool luavalue_cast(int index, std::map<K, V>& map);
+template<class K, class V, class H>
+bool luavalue_cast(int index, stdext::map<K, V, H>& map);
 
 // tuple
 template<typename... Args>
@@ -241,7 +241,7 @@ push_luavalue(const T& obj)
 
 template<class T>
 std::enable_if_t<std::is_base_of_v<LuaObject, T>, bool>
-luavalue_cast(int index, stdext::shared_object_ptr<T>& ptr)
+luavalue_cast(int index, std::shared_ptr<T>& ptr)
 {
     LuaObjectPtr obj;
     if (!luavalue_cast(index, obj))
@@ -418,8 +418,8 @@ bool luavalue_cast(int index, std::deque<T>& vec)
     return false;
 }
 
-template<class K, class V>
-int push_luavalue(const std::map<K, V>& map)
+template<class K, class V, class H>
+int push_luavalue(const stdext::map<K, V, H>& map)
 {
     g_lua.newTable();
     for (const auto& [key, value] : map) {
@@ -430,8 +430,8 @@ int push_luavalue(const std::map<K, V>& map)
     return 1;
 }
 
-template<class K, class V>
-bool luavalue_cast(int index, std::map<K, V>& map)
+template<class K, class V, class H>
+bool luavalue_cast(int index, stdext::map<K, V, H>& map)
 {
     if (g_lua.isTable(index)) {
         g_lua.pushNil();

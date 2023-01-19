@@ -38,13 +38,13 @@ Painter::Painter()
 {
     setResolution(g_window.getSize());
 
-    m_drawTexturedProgram = PainterShaderProgramPtr(new PainterShaderProgram);
+    m_drawTexturedProgram = std::make_shared<PainterShaderProgram>();
     assert(m_drawTexturedProgram);
     m_drawTexturedProgram->addShaderFromSourceCode(ShaderType::VERTEX, std::string{ glslMainWithTexCoordsVertexShader } + glslPositionOnlyVertexShader.data());
     m_drawTexturedProgram->addShaderFromSourceCode(ShaderType::FRAGMENT, std::string{ glslMainFragmentShader } + glslTextureSrcFragmentShader.data());
     m_drawTexturedProgram->link();
 
-    m_drawSolidColorProgram = PainterShaderProgramPtr(new PainterShaderProgram);
+    m_drawSolidColorProgram = std::make_shared<PainterShaderProgram>();
     assert(m_drawSolidColorProgram);
     m_drawSolidColorProgram->addShaderFromSourceCode(ShaderType::VERTEX, std::string{ glslMainVertexShader } + glslPositionOnlyVertexShader.data());
     m_drawSolidColorProgram->addShaderFromSourceCode(ShaderType::FRAGMENT, std::string{ glslMainFragmentShader } + glslSolidColorFragmentShader.data());
@@ -171,8 +171,8 @@ void Painter::setCompositionMode(CompositionMode compositionMode)
 {
     if (m_compositionMode == compositionMode)
         return;
-    m_compositionMode = compositionMode;
 
+    m_compositionMode = compositionMode;
     updateGlCompositionMode();
 }
 
@@ -180,8 +180,8 @@ void Painter::setBlendEquation(BlendEquation blendEquation)
 {
     if (m_blendEquation == blendEquation)
         return;
-    m_blendEquation = blendEquation;
 
+    m_blendEquation = blendEquation;
     updateGlBlendEquation();
 }
 
@@ -189,8 +189,8 @@ void Painter::setClipRect(const Rect& clipRect)
 {
     if (m_clipRect == clipRect)
         return;
-    m_clipRect = clipRect;
 
+    m_clipRect = clipRect;
     updateGlClipRect();
 }
 
@@ -199,9 +199,7 @@ void Painter::setTexture(Texture* texture)
     if (m_texture == texture)
         return;
 
-    m_texture = texture;
-
-    if (!m_texture) {
+    if (!(m_texture = texture)) {
         m_glTextureId = 0;
         return;
     }
@@ -251,65 +249,6 @@ Matrix3 Painter::getTransformMatrix(const Size& resolution)
                                  -1.0f,  1.0f,                       1.0f };
 }
 
-void Painter::scale(float x, float y)
-{
-    const Matrix3 scaleMatrix = {
-              x,   0.0f,  0.0f,
-            0.0f,     y,  0.0f,
-            0.0f,  0.0f,  1.0f
-    };
-
-    setTransformMatrix(m_transformMatrix * scaleMatrix.transposed());
-}
-
-void Painter::translate(float x, float y)
-{
-    const Matrix3 translateMatrix = {
-            1.0f,  0.0f,     x,
-            0.0f,  1.0f,     y,
-            0.0f,  0.0f,  1.0f
-    };
-
-    setTransformMatrix(m_transformMatrix * translateMatrix.transposed());
-}
-
-void Painter::rotate(float angle)
-{
-    const Matrix3 rotationMatrix = {
-            std::cos(angle), -std::sin(angle),  0.0f,
-            std::sin(angle),  std::cos(angle),  0.0f,
-                                 0.0f,             0.0f,  1.0f
-    };
-
-    setTransformMatrix(m_transformMatrix * rotationMatrix.transposed());
-}
-
-void Painter::rotate(float x, float y, float angle)
-{
-    translate(-x, -y);
-    rotate(angle);
-    translate(x, y);
-}
-
-void Painter::pushTransformMatrix()
-{
-    m_transformMatrixStack.push_back(m_transformMatrix);
-    assert(m_transformMatrixStack.size() < 100);
-}
-
-void Painter::popTransformMatrix()
-{
-    assert(!m_transformMatrixStack.empty());
-    setTransformMatrix(m_transformMatrixStack.back());
-    m_transformMatrixStack.pop_back();
-}
-
-void Painter::updateGlTexture()
-{
-    if (m_glTextureId != 0)
-        glBindTexture(GL_TEXTURE_2D, m_glTextureId);
-}
-
 void Painter::updateGlCompositionMode()
 {
     switch (m_compositionMode) {
@@ -334,20 +273,6 @@ void Painter::updateGlCompositionMode()
     }
 }
 
-void Painter::updateGlBlendEquation()
-{
-    if (m_blendEquation == BlendEquation::ADD)
-        glBlendEquation(GL_FUNC_ADD);
-    else if (m_blendEquation == BlendEquation::MAX)
-        glBlendEquation(GL_MAX);
-    else if (m_blendEquation == BlendEquation::MIN)
-        glBlendEquation(GL_MIN);
-    else if (m_blendEquation == BlendEquation::SUBTRACT)
-        glBlendEquation(GL_FUNC_SUBTRACT);
-    else if (m_blendEquation == BlendEquation::REVER_SUBTRACT)
-        glBlendEquation(GL_FUNC_REVERSE_SUBTRACT);
-}
-
 void Painter::updateGlClipRect()
 {
     if (m_clipRect.isValid()) {
@@ -358,13 +283,7 @@ void Painter::updateGlClipRect()
         glDisable(GL_SCISSOR_TEST);
     }
 }
-
-void Painter::updateGlAlphaWriting()
-{
-    glColorMask(1, 1, 1, m_alphaWriting);
-}
-
-void Painter::updateGlViewport()
-{
-    glViewport(0, 0, m_resolution.width(), m_resolution.height());
-}
+void Painter::updateGlTexture() { if (m_glTextureId != 0) glBindTexture(GL_TEXTURE_2D, m_glTextureId); }
+void Painter::updateGlBlendEquation() { glBlendEquation(static_cast<GLenum>(m_blendEquation)); }
+void Painter::updateGlAlphaWriting() { glColorMask(1, 1, 1, m_alphaWriting); }
+void Painter::updateGlViewport() { glViewport(0, 0, m_resolution.width(), m_resolution.height()); }

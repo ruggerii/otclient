@@ -66,7 +66,8 @@ enum OTBM_NodeTypes_t
     OTBM_WAYPOINT = 16
 };
 
-enum OTBM_ItemAttr {
+enum OTBM_ItemAttr
+{
     OTBM_ATTR_DESCRIPTION = 1,
     OTBM_ATTR_EXT_FILE = 2,
     OTBM_ATTR_TILE_FLAGS = 3,
@@ -104,14 +105,14 @@ public:
     const TilePtr& create(const Position& pos)
     {
         TilePtr& tile = m_tiles[getTileIndex(pos)];
-        tile = TilePtr(new Tile(pos));
+        tile = std::make_shared<Tile>(pos);
         return tile;
     }
     const TilePtr& getOrCreate(const Position& pos)
     {
         TilePtr& tile = m_tiles[getTileIndex(pos)];
         if (!tile)
-            tile = TilePtr(new Tile(pos));
+            tile = std::make_shared<Tile>(pos);
         return tile;
     }
     const TilePtr& get(const Position& pos) { return m_tiles[getTileIndex(pos)]; }
@@ -201,7 +202,7 @@ public:
 
     void clean();
     void cleanDynamicThings();
-    void cleanTexts();
+    void cleanTexts() { m_animatedTexts.clear(); m_staticTexts.clear(); }
 
     // thing related
     void addThing(const ThingPtr& thing, const Position& pos, int16_t stackPos = -1);
@@ -225,15 +226,27 @@ public:
     void beginGhostMode(float opacity);
     void endGhostMode();
 
-    std::map<Position, ItemPtr> findItemsById(uint16_t clientId, uint32_t max);
+    stdext::map<Position, ItemPtr, Position::Hasher> findItemsById(uint16_t clientId, uint32_t max);
 
-    // known creature related
-    void addCreature(const CreaturePtr& creature);
     CreaturePtr getCreatureById(uint32_t id);
+    void addCreature(const CreaturePtr& creature);
     void removeCreatureById(uint32_t id);
-    std::vector<CreaturePtr> getSightSpectators(const Position& centerPos, bool multiFloor);
-    std::vector<CreaturePtr> getSpectators(const Position& centerPos, bool multiFloor);
-    std::vector<CreaturePtr> getSpectatorsInRange(const Position& centerPos, bool multiFloor, int32_t xRange, int32_t yRange);
+
+    std::vector<CreaturePtr> getSpectators(const Position& centerPos, bool multiFloor)
+    {
+        return getSpectatorsInRangeEx(centerPos, multiFloor, m_awareRange.left, m_awareRange.right, m_awareRange.top, m_awareRange.bottom);
+    }
+
+    std::vector<CreaturePtr> getSightSpectators(const Position& centerPos, bool multiFloor)
+    {
+        return getSpectatorsInRangeEx(centerPos, multiFloor, m_awareRange.left - 1, m_awareRange.right - 2, m_awareRange.top - 1, m_awareRange.bottom - 2);
+    }
+
+    std::vector<CreaturePtr> getSpectatorsInRange(const Position& centerPos, bool multiFloor, int32_t xRange, int32_t yRange)
+    {
+        return getSpectatorsInRangeEx(centerPos, multiFloor, xRange, xRange, yRange, yRange);
+    }
+
     std::vector<CreaturePtr> getSpectatorsInRangeEx(const Position& centerPos, bool multiFloor, int32_t minXRange, int32_t maxXRange, int32_t minYRange, int32_t maxYRange);
 
     void setLight(const Light& light);
@@ -261,10 +274,10 @@ public:
     std::vector<StaticTextPtr> getStaticTexts() { return m_staticTexts; }
 
     std::tuple<std::vector<Otc::Direction>, Otc::PathFindResult> findPath(const Position& start, const Position& goal,
-        int maxComplexity, int flags = 0);
+                                                                          int maxComplexity, int flags = 0);
     PathFindResult_ptr newFindPath(const Position& start, const Position& goal, const std::shared_ptr<std::list<Node*>>& visibleNodes);
     void findPathAsync(const Position& start, const Position& goal,
-        const std::function<void(PathFindResult_ptr)>& callback);
+                       const std::function<void(PathFindResult_ptr)>& callback);
 
     void setFloatingEffect(bool enable) { m_floatingEffect = enable; }
     bool isDrawingFloatingEffects() { return m_floatingEffect; }

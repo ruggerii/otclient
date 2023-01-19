@@ -33,6 +33,8 @@ function Controller:init()
             gameEvent.onGameStart()
         end
     end
+
+    self:connectExternalEvents()
 end
 
 function Controller:terminate()
@@ -51,10 +53,6 @@ function Controller:terminate()
 
     for actor, events in pairs(self.events) do
         disconnect(actor, events)
-    end
-
-    for name, widget in pairs(self.widgets) do
-        widget:destroy()
     end
 
     for i, event in pairs(self.keyboardEvents) do

@@ -32,16 +32,16 @@ void ParticleSystem::load(const OTMLNodePtr& node)
 {
     for (const OTMLNodePtr& childNode : node->children()) {
         if (childNode->tag() == "Emitter") {
-            const auto& emitter = ParticleEmitterPtr(new ParticleEmitter());
+            const auto& emitter = std::make_shared<ParticleEmitter>();
             emitter->load(childNode);
             m_emitters.push_back(emitter);
         } else if (childNode->tag().find("Affector") != std::string::npos) {
             ParticleAffectorPtr affector;
 
             if (childNode->tag() == "GravityAffector")
-                affector = ParticleAffectorPtr(new GravityAffector);
+                affector = std::make_shared<GravityAffector>();
             else if (childNode->tag() == "AttractionAffector")
-                affector = ParticleAffectorPtr(new AttractionAffector);
+                affector = std::make_shared<AttractionAffector>();
 
             if (affector) {
                 affector->load(childNode);
@@ -79,7 +79,7 @@ void ParticleSystem::update()
 
     m_lastUpdateTime = g_clock.seconds() - std::fmod(elapsedTime, delay);
 
-    const auto self = static_self_cast<ParticleSystem>();
+    const auto self = std::shared_ptr<ParticleSystem>(this);
     for (int i = 0; i < std::floor(elapsedTime / delay); ++i) {
         // update emitters
         for (auto it = m_emitters.begin(); it != m_emitters.end();) {
@@ -110,7 +110,7 @@ void ParticleSystem::update()
                 it = m_particles.erase(it);
             } else {
                 // pass particles through affectors
-                for (const ParticleAffectorPtr& particleAffector : m_affectors)
+                for (const auto& particleAffector : m_affectors)
                     particleAffector->updateParticle(particle, delay);
 
                 particle->update(delay);

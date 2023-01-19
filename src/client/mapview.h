@@ -86,7 +86,8 @@ public:
 
     MapView();
     ~MapView() override;
-    void draw(const Rect& rect);
+    void draw();
+    void drawText();
 
     // floor visibility related
     uint8_t getLockedFirstVisibleFloor() { return m_lockedFirstVisibleFloor; }
@@ -119,10 +120,6 @@ public:
     void setShadowFloorIntensity(float intensity) { m_shadowFloorIntensity = intensity; updateLight(); }
     float getShadowFloorIntensity() { return m_shadowFloorIntensity; }
 
-    // drawing related
-    void setDrawTexts(bool enable) { m_drawTexts = enable; }
-    bool isDrawingTexts() { return m_drawTexts; }
-
     void setDrawNames(bool enable) { m_drawNames = enable; }
     bool isDrawingNames() { return m_drawNames; }
 
@@ -140,7 +137,7 @@ public:
 
     void move(int32_t x, int32_t y);
 
-    void setShader(const PainterShaderProgramPtr& shader, float fadein, float fadeout);
+    void setShader(const std::string_view name, float fadein, float fadeout);
     PainterShaderProgramPtr getShader() { return m_shader; }
 
     Position getPosition(const Point& point, const Size& mapSize);
@@ -186,6 +183,7 @@ protected:
     void onFadeInFinished();
 
     friend class Map;
+    friend class UIMap;
     friend class Tile;
     friend class LightView;
 
@@ -206,6 +204,7 @@ private:
 
     void updateGeometry(const Size& visibleDimension);
     void updateVisibleTiles();
+    void updateRect(const Rect& rect);
     void requestUpdateVisibleTiles() { m_updateVisibleTiles = true; }
     void requestUpdateMapPosInfo() { m_posInfo.rect = {}; }
 
@@ -215,7 +214,6 @@ private:
     void updateLight();
     void updateViewportDirectionCache();
     void drawFloor();
-    void drawText();
 
     void updateViewport(const Otc::Direction dir = Otc::InvalidDirection) { m_viewport = m_viewPortDirection[dir]; }
 
@@ -277,13 +275,13 @@ private:
     bool m_shaderSwitchDone{ true };
     bool m_drawHealthBars{ true };
     bool m_drawManaBar{ true };
-    bool m_drawTexts{ true };
     bool m_drawNames{ true };
     bool m_smooth{ true };
     bool m_follow{ true };
 
     bool m_autoViewMode{ false };
     bool m_drawViewportEdge{ false };
+    bool m_forceDrawViewportEdge{ false };
     bool m_drawHighlightTarget{ false };
     bool m_shiftPressed{ false };
 
@@ -307,4 +305,5 @@ private:
     TexturePtr m_crosshairTexture;
 
     DrawBufferPtr m_shadowBuffer;
+    DrawPoolFramed* m_pool;
 };

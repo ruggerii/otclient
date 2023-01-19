@@ -31,15 +31,8 @@
 
 uint32_t FrameBuffer::boundFbo = 0;
 
-FrameBuffer::FrameBuffer(const bool useAlphaWriting) :m_useAlphaWriting(useAlphaWriting)
+FrameBuffer::FrameBuffer()
 {
-    internalCreate();
-}
-
-void FrameBuffer::internalCreate()
-{
-    m_prevBoundFbo = 0;
-    m_fbo = 0;
     glGenFramebuffers(1, &m_fbo);
     if (!m_fbo)
         g_logger.fatal("Unable to create framebuffer object");
@@ -54,14 +47,14 @@ FrameBuffer::~FrameBuffer()
         glDeleteFramebuffers(1, &m_fbo);
 }
 
-void FrameBuffer::resize(const Size& size)
+bool FrameBuffer::resize(const Size& size)
 {
     assert(size.isValid());
 
     if (m_texture && m_texture->getSize() == size)
-        return;
+        return false;
 
-    m_texture = TexturePtr(new Texture(size));
+    m_texture = std::make_shared<Texture>(size);
     m_texture->setSmooth(m_smooth);
     m_texture->setUpsideDown(true);
     m_textureMatrix = g_painter->getTransformMatrix(size);
@@ -74,6 +67,8 @@ void FrameBuffer::resize(const Size& size)
         g_logger.fatal("Unable to setup framebuffer object");
 
     internalRelease();
+
+    return true;
 }
 
 void FrameBuffer::bind()

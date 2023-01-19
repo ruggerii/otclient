@@ -32,14 +32,14 @@
 CreatureManager g_creatures;
 
 static bool isInZone(const Position& pos/* placePos*/,
-    const Position& centerPos,
-    int radius)
+                     const Position& centerPos,
+                     int radius)
 {
     if (radius == -1)
         return true;
 
     return ((pos.x >= centerPos.x - radius) && (pos.x <= centerPos.x + radius) &&
-        (pos.y >= centerPos.y - radius) && (pos.y <= centerPos.y + radius));
+            (pos.y >= centerPos.y - radius) && (pos.y <= centerPos.y + radius));
 }
 
 void CreatureManager::terminate()
@@ -125,8 +125,8 @@ void Spawn::addCreature(const Position& placePos, const CreatureTypePtr& cType)
     const int m_radius = getRadius();
     if (!isInZone(placePos, centerPos, m_radius)) {
         g_logger.warning(stdext::format("cannot place creature at %s (spawn's center position: %s, spawn radius: %d) (increment radius)",
-            stdext::to_string(placePos), stdext::to_string(centerPos),
-            m_radius
+                         stdext::to_string(placePos), stdext::to_string(centerPos),
+                         m_radius
         ));
         return;
     }
@@ -155,7 +155,7 @@ std::vector<CreatureTypePtr> Spawn::getCreatures()
 
 CreaturePtr CreatureType::cast()
 {
-    CreaturePtr ret(new Creature);
+    const auto& ret = std::make_shared<Creature>();
 
     std::string cName = getName();
     stdext::tolower(cName);
@@ -170,7 +170,7 @@ CreaturePtr CreatureType::cast()
 
 CreatureManager::CreatureManager()
 {
-    m_nullCreature = CreatureTypePtr(new CreatureType);
+    m_nullCreature = std::make_shared<CreatureType>();
 }
 
 void CreatureManager::clearSpawns()
@@ -248,7 +248,7 @@ void CreatureManager::loadSpawns(const std::string& fileName)
             if (node->ValueTStr() != "spawn")
                 throw Exception("invalid spawn node");
 
-            SpawnPtr spawn(new Spawn);
+            const auto& spawn = std::make_shared<Spawn>();
             spawn->load(node);
             m_spawns.emplace(spawn->getCenterPos(), spawn);
         }
@@ -302,7 +302,7 @@ void CreatureManager::loadCreatureBuffer(const std::string& buffer)
     stdext::trim(cName);
     stdext::ucwords(cName);
 
-    const CreatureTypePtr& newType(new CreatureType(cName));
+    const auto& newType = std::make_shared<CreatureType>(cName);
     for (TiXmlElement* attrib = root->FirstChildElement(); attrib; attrib = attrib->NextSiblingElement()) {
         if (attrib->ValueStr() != "look")
             continue;
@@ -348,7 +348,7 @@ const CreatureTypePtr& CreatureManager::getCreatureByName(std::string name)
     stdext::trim(name);
     stdext::ucwords(name);
     const auto it = std::find_if(m_creatures.begin(), m_creatures.end(),
-        [=](const CreatureTypePtr& m) -> bool { return m->getName() == name; });
+                                 [=](const CreatureTypePtr& m) -> bool { return m->getName() == name; });
     if (it != m_creatures.end())
         return *it;
     g_logger.warning(stdext::format("could not find creature with name: %s", name));
@@ -396,8 +396,7 @@ SpawnPtr CreatureManager::addSpawn(const Position& centerPos, int radius)
         return iter->second;
     }
 
-    SpawnPtr ret(new Spawn);
-
+    const auto& ret = std::make_shared<Spawn>();
     ret->setRadius(radius);
     ret->setCenterPos(centerPos);
 

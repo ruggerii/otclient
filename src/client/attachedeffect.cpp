@@ -22,7 +22,17 @@
 
 #include "attachedeffect.h"
 #include "thingtypemanager.h"
+#include "shadermanager.h"
 #include "spritemanager.h"
+
+#include <framework/core/clock.h>
+
+AttachedEffectPtr AttachedEffect::clone()
+{
+    auto obj = std::make_shared<AttachedEffect>();
+    *(obj.get()) = *this;
+    return obj;
+}
 
 AttachedEffectPtr AttachedEffect::create(uint16_t id, uint16_t thingId, ThingCategory category) {
     if (!g_things.isValidDatId(thingId, category)) {
@@ -30,7 +40,7 @@ AttachedEffectPtr AttachedEffect::create(uint16_t id, uint16_t thingId, ThingCat
         return nullptr;
     }
 
-    const AttachedEffectPtr& obj(new AttachedEffect);
+    const auto& obj = std::make_shared<AttachedEffect>();
     obj->m_id = id;
     obj->m_thingType = g_things.getThingType(thingId, category).get();
     return obj;
@@ -41,14 +51,35 @@ void AttachedEffect::draw(const Point& dest, bool isOnTop, LightView* lightView)
     if (dirControl.onTop != isOnTop)
         return;
 
-    const auto* animator = m_thingType->getIdleAnimator();
-    if (!animator) {
-        if (!m_thingType->isAnimateAlways())
-            return;
+    if (!m_canDrawOnUI && g_drawPool.getCurrentType() == DrawPoolType::FOREGROUND)
+        return;
 
+    if (m_shader) g_drawPool.setShaderProgram(m_shader, true);
+    m_thingType->draw(dest - (dirControl.offset * g_drawPool.getScaleFactor()), 0, m_direction, 0, 0, getCurrentAnimationPhase(), Otc::DrawThingsAndLights, TextureType::NONE, Color::white, lightView);
+}
+
+int AttachedEffect::getCurrentAnimationPhase()
+{
+    const auto* animator = m_thingType->getIdleAnimator();
+    if (!animator && m_thingType->isAnimateAlways())
         animator = m_thingType->getAnimator();
+
+    if (animator)
+        return animator->getPhaseAt(m_animationTimer, m_speed);
+
+    if (m_thingType->getCategory() == ThingCategoryEffect) {
+        const int lastPhase = m_thingType->getAnimationPhases() - 1;
+        const int phase = std::min<int>(static_cast<int>(m_animationTimer.ticksElapsed() / (EFFECT_TICKS_PER_FRAME / m_speed)), lastPhase);
+        if (phase == lastPhase) m_animationTimer.restart();
+        return phase;
     }
 
-    m_thingType->draw(dest - (dirControl.offset * g_sprites.getScaleFactor()), 0, m_direction, 0, 0, animator->getPhaseAt(m_animationTimer, m_speed), Otc::DrawThingsAndLights, TextureType::NONE, Color::white, lightView);
-    if (m_shader) g_drawPool.setShaderProgram(m_shader, true);
+    if (m_thingType->getCategory() == ThingCategoryCreature && m_thingType->isAnimateAlways()) {
+        const int ticksPerFrame = std::round(1000 / m_thingType->getAnimationPhases()) / m_speed;
+        return (g_clock.millis() % (static_cast<long long>(ticksPerFrame) * m_thingType->getAnimationPhases())) / ticksPerFrame;
+    }
+
+    return 0;
 }
+
+void AttachedEffect::setShader(const std::string_view name) { m_shader = g_shaders.getShader(name); }

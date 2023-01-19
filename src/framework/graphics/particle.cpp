@@ -26,7 +26,7 @@
 
 Particle::Particle(const Point& pos, const Size& startSize, const Size& finalSize, const PointF& velocity,
                    const PointF& acceleration, float duration, float ignorePhysicsAfter, const std::vector<Color>& colors,
-                   const std::vector<float>& colorsStops, CompositionMode compositionMode, TexturePtr texture) :
+                   const std::vector<float>& colorsStops, CompositionMode compositionMode, const TexturePtr& texture) :
     m_colors(colors), m_colorsStops(colorsStops), m_texture(texture), m_position(PointF(pos.x, pos.y)),
     m_velocity(velocity), m_acceleration(acceleration), m_startSize(startSize), m_finalSize(finalSize),
     m_compositionMode(compositionMode), m_duration(duration), m_ignorePhysicsAfter(ignorePhysicsAfter)
@@ -39,8 +39,8 @@ void Particle::render()
         return;
     }
 
-    g_drawPool.addTexturedRect(m_rect, m_texture, m_color);
     g_drawPool.setCompositionMode(m_compositionMode, true);
+    g_drawPool.addTexturedRect(m_rect, m_texture, m_color);
 }
 
 void Particle::update(float elapsedTime)
@@ -65,7 +65,7 @@ void Particle::updatePosition(float elapsedTime)
         PointF delta = m_velocity * elapsedTime;
         delta.y *= -1; // painter orientate Y axis in the inverse direction
 
-        const PointF position = m_position + delta;
+        const auto& position = m_position + delta;
 
         if (m_position != position) {
             m_position += delta;

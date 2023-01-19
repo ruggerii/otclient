@@ -27,11 +27,13 @@
 
 #include <framework/platform/platform.h>
 
- #ifdef FRAMEWORK_NET
- #include <framework/net/protocolhttp.h>
- #endif
+#if ENABLE_DISCORD_RPC == 1
+#include <framework/discord/discord.h>
+#endif
 
-
+#ifdef FRAMEWORK_NET
+#include <framework/net/protocolhttp.h>
+#endif
 
 int main(int argc, const char* argv[])
 {
@@ -52,6 +54,10 @@ int main(int argc, const char* argv[])
 #endif
         return 0;
     }
+#endif
+
+#if ENABLE_DISCORD_RPC == 1
+    g_discord.init();
 #endif
 
     // initialize application framework and otclient

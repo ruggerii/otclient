@@ -26,23 +26,26 @@
 
 #include "framework/graphics/particleeffect.h"
 
-void UIParticles::drawSelf(Fw::DrawPane /*drawPane*/)
+void UIParticles::drawSelf(DrawPoolType drawPane)
 {
-    UIWidget::drawSelf(Fw::ForegroundPane);
+    if (drawPane != DrawPoolType::FOREGROUND)
+        return;
+
+    UIWidget::drawSelf(DrawPoolType::FOREGROUND);
 
     const auto& oldClipRect = g_drawPool.getClipRect();
     g_drawPool.setClipRect(getPaddingRect());
-    g_painter->pushTransformMatrix();
+    g_drawPool.pushTransformMatrix();
 
     if (m_referencePos.x < 0 && m_referencePos.y < 0)
-        g_painter->translate(m_rect.center());
+        g_drawPool.translate(m_rect.center());
     else
-        g_painter->translate(m_rect.x() + m_referencePos.x * m_rect.width(), m_rect.y() + m_referencePos.y * m_rect.height());
+        g_drawPool.translate(m_rect.x() + m_referencePos.x * m_rect.width(), m_rect.y() + m_referencePos.y * m_rect.height());
 
     for (const auto& effect : m_effects)
         effect->render();
 
-    g_painter->popTransformMatrix();
+    g_drawPool.popTransformMatrix();
     g_drawPool.setClipRect(oldClipRect);
 }
 

@@ -17,12 +17,20 @@ local executeConfig = function(attachedEffect, config)
             onTop = config.offset[3] or false
         end
 
-        if config.shader then
-            attachedEffect:setShader(g_shaders.getShader(config.shader))
+        if config.drawOnUI == false then
+            attachedEffect:setCanDrawOnUI(false)
         end
 
-        attachedEffect:setOffset(x, y)
-        attachedEffect:setOnTop(onTop)
+        if config.shader then
+            attachedEffect:setShader(config.shader)
+        end
+
+        if x ~= 0 or y ~= 0 then
+            attachedEffect:setOffset(x, y)
+        end
+        if onTop then
+            attachedEffect:setOnTop(true)
+        end
 
         if config.dirOffset then
             for dir, offset in pairs(config.dirOffset) do

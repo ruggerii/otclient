@@ -111,11 +111,13 @@ void Application::deinit()
 
     // poll remaining events
     poll();
+    Application::poll();
 
     g_asyncDispatcher.terminate();
 
     // disable dispatcher events
     g_dispatcher.shutdown();
+    g_mainDispatcher.shutdown();
 }
 
 void Application::terminate()
@@ -142,6 +144,8 @@ void Application::terminate()
 
 void Application::poll()
 {
+    g_clock.update();
+
 #ifdef FRAMEWORK_NET
     Connection::poll();
 #endif
@@ -152,6 +156,8 @@ void Application::poll()
 #ifdef FRAMEWORK_NET
     Connection::poll();
 #endif
+
+    g_clock.update();
 }
 
 void Application::exit()

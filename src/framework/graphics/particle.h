@@ -25,10 +25,10 @@
 #include "declarations.h"
 #include "painter.h"
 
-class Particle : public stdext::shared_object
+class Particle
 {
 public:
-    Particle(const Point& pos, const Size& startSize, const Size& finalSize, const PointF& velocity, const PointF& acceleration, float duration, float ignorePhysicsAfter, const std::vector<Color>& colors, const std::vector<float>& colorsStops, CompositionMode compositionMode = CompositionMode::NORMAL, TexturePtr texture = nullptr);
+    Particle(const Point& pos, const Size& startSize, const Size& finalSize, const PointF& velocity, const PointF& acceleration, float duration, float ignorePhysicsAfter, const std::vector<Color>& colors, const std::vector<float>& colorsStops, CompositionMode compositionMode = CompositionMode::NORMAL, const TexturePtr& texture = nullptr);
 
     void render();
     void update(float elapsedTime);

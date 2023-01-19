@@ -53,9 +53,9 @@ public:
     ~UIWidget() override;
 
 protected:
-    virtual void draw(const Rect& visibleRect, Fw::DrawPane drawPane);
-    virtual void drawSelf(Fw::DrawPane drawPane);
-    virtual void drawChildren(const Rect& visibleRect, Fw::DrawPane drawPane);
+    virtual void draw(const Rect& visibleRect, DrawPoolType drawPane);
+    virtual void drawSelf(DrawPoolType drawPane);
+    virtual void drawChildren(const Rect& visibleRect, DrawPoolType drawPane);
 
     friend class UIManager;
 
@@ -149,7 +149,7 @@ public:
     bool isAnchored();
     bool isChildLocked(const UIWidgetPtr& child);
     bool hasChild(const UIWidgetPtr& child);
-    int getChildIndex(const UIWidgetPtr& child) { return child && child->getParent() == this ? child->m_childIndex : -1; }
+    int getChildIndex(const UIWidgetPtr& child) { return child && child->getParent().get() == this ? child->m_childIndex : -1; }
     Rect getPaddingRect();
     Rect getMarginRect();
     Rect getChildrenRect();

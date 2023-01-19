@@ -51,7 +51,7 @@ UIWidget::~UIWidget()
 #endif
 }
 
-void UIWidget::draw(const Rect& visibleRect, Fw::DrawPane drawPane)
+void UIWidget::draw(const Rect& visibleRect, DrawPoolType drawPane)
 {
     Rect oldClipRect;
     if (m_clipping) {
@@ -60,8 +60,8 @@ void UIWidget::draw(const Rect& visibleRect, Fw::DrawPane drawPane)
     }
 
     if (m_rotation != 0.0f) {
-        g_painter->pushTransformMatrix();
-        g_painter->rotate(m_rect.center(), m_rotation * (Fw::pi / 180.0));
+        g_drawPool.pushTransformMatrix();
+        g_drawPool.rotate(m_rect.center(), m_rotation * (Fw::pi / 180.0));
     }
 
     drawSelf(drawPane);
@@ -74,16 +74,16 @@ void UIWidget::draw(const Rect& visibleRect, Fw::DrawPane drawPane)
     }
 
     if (m_rotation != 0.0f)
-        g_painter->popTransformMatrix();
+        g_drawPool.popTransformMatrix();
 
     if (m_clipping) {
         g_drawPool.setClipRect(oldClipRect);
     }
 }
 
-void UIWidget::drawSelf(Fw::DrawPane drawPane)
+void UIWidget::drawSelf(DrawPoolType drawPane)
 {
-    if ((drawPane & Fw::ForegroundPane) == 0)
+    if (drawPane != DrawPoolType::FOREGROUND)
         return;
 
     // draw style components in order
@@ -99,15 +99,15 @@ void UIWidget::drawSelf(Fw::DrawPane drawPane)
     drawBorder(m_rect);
 }
 
-void UIWidget::drawChildren(const Rect& visibleRect, Fw::DrawPane drawPane)
+void UIWidget::drawChildren(const Rect& visibleRect, DrawPoolType drawPane)
 {
     // draw children
-    for (const UIWidgetPtr& child : m_children) {
+    for (const auto child : m_children) { // don't use auto&
         // render only visible children with a valid rect inside parent rect
         if (!child->isExplicitlyVisible() || !child->getRect().isValid() || child->getOpacity() < Fw::MIN_ALPHA)
             continue;
 
-        Rect childVisibleRect = visibleRect.intersection(child->getRect());
+        const auto& childVisibleRect = visibleRect.intersection(child->getRect());
         if (!childVisibleRect.isValid())
             continue;
 
@@ -121,7 +121,7 @@ void UIWidget::drawChildren(const Rect& visibleRect, Fw::DrawPane drawPane)
         child->draw(childVisibleRect, drawPane);
 
         // debug draw box
-        if (g_ui.isDrawingDebugBoxes() && drawPane & Fw::ForegroundPane) {
+        if (g_ui.isDrawingDebugBoxes() && drawPane == DrawPoolType::FOREGROUND) {
             g_drawPool.addBoundingRect(child->getRect(), Color::green);
         }
 
@@ -146,7 +146,7 @@ void UIWidget::addChild(const UIWidgetPtr& child)
         return;
     }
 
-    const UIWidgetPtr& oldLastChild = getLastChild();
+    const auto& oldLastChild = getLastChild();
 
     m_children.push_back(child);
     m_childrenById[child->getId()] = child;
@@ -157,7 +157,7 @@ void UIWidget::addChild(const UIWidgetPtr& child)
 
     // create default layout
     if (!m_layout)
-        m_layout = UIAnchorLayoutPtr(new UIAnchorLayout(static_self_cast<UIWidget>()));
+        m_layout = std::make_shared<UIAnchorLayout>(static_self_cast<UIWidget>());
 
     // add to layout and updates it
     m_layout->addWidget(child);
@@ -222,7 +222,7 @@ void UIWidget::insertChild(size_t index, const UIWidgetPtr& child)
 
     // create default layout if needed
     if (!m_layout)
-        m_layout = UIAnchorLayoutPtr(new UIAnchorLayout(static_self_cast<UIWidget>()));
+        m_layout = std::make_shared<UIAnchorLayout>(static_self_cast<UIWidget>());
 
     // add to layout and updates it
     m_layout->addWidget(child);
@@ -298,7 +298,7 @@ void UIWidget::focusChild(const UIWidgetPtr& child, Fw::FocusReason reason)
         return;
     }
 
-    const UIWidgetPtr oldFocused = m_focusedChild;
+    const auto oldFocused = m_focusedChild;
     m_focusedChild = child;
 
     if (child) {
@@ -575,8 +575,8 @@ void UIWidget::unlockChild(const UIWidgetPtr& child)
 void UIWidget::mergeStyle(const OTMLNodePtr& styleNode)
 {
     applyStyle(styleNode);
-    const std::string name = m_style->tag();
-    const std::string source = m_style->source();
+    const auto& name = m_style->tag();
+    const auto& source = m_style->source();
     m_style->merge(styleNode);
     m_style->setTag(name);
     m_style->setSource(source);
@@ -614,7 +614,7 @@ void UIWidget::applyStyle(const OTMLNodePtr& styleNode)
             const auto& parent = getParent();
             if (isFocusable() && isExplicitlyVisible() && isExplicitlyEnabled() &&
                 parent && ((!parent->getFocusedChild() && parent->getAutoFocusPolicy() == Fw::AutoFocusFirst) ||
-                           parent->getAutoFocusPolicy() == Fw::AutoFocusLast)) {
+                parent->getAutoFocusPolicy() == Fw::AutoFocusLast)) {
                 focus();
             }
         }

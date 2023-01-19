@@ -23,7 +23,6 @@
 #pragma once
 
 #include <utility>
-#include <optional>
 
 #include "declarations.h"
 #include "framebuffer.h"
@@ -66,8 +65,17 @@ public:
     bool canRepaint() { return canRepaint(false); }
     void repaint() { m_status.first = 1; }
 
+    virtual bool isValid() const { return true; };
 
-protected:
+    void optimize(int size);
+
+    void setScaleFactor(float scale) { m_scaleFactor = scale; }
+    inline float getScaleFactor() const { return m_scaleFactor; }
+
+    void resetState();
+
+    std::mutex& getMutex() { return m_mutex; }
+
     struct PoolState
     {
         Matrix3 transformMatrix;
@@ -94,6 +102,8 @@ protected:
         }
     };
 
+protected:
+
     enum class DrawMethodType
     {
         RECT,
@@ -106,9 +116,9 @@ protected:
     struct DrawMethod
     {
         DrawMethodType type;
-        std::optional<std::pair<Rect, Rect>> rects;
-        std::optional<std::tuple<Point, Point, Point>> points;
-        std::optional<Point> dest;
+        std::pair<Rect, Rect> rects;
+        std::tuple<Point, Point, Point> points;
+        Point dest;
         uint16_t intValue{ 0 };
     };
 
@@ -117,24 +127,22 @@ protected:
         DrawObject(std::function<void()> action) : action(std::move(action)) {}
         DrawObject(const PoolState& state, const DrawBufferPtr& buffer) : buffer(buffer), state(state) {}
         DrawObject(const DrawMode drawMode, const PoolState& state, const DrawMethod& method) :
-            drawMode(drawMode), state(state), method(method)
-        {}
+            drawMode(drawMode), state(state), method(method) {}
 
         void addMethod(const DrawMethod& method)
         {
-            if (!methods.has_value()) {
-                methods = std::vector<DrawMethod>();
-                methods->emplace_back(*this->method);
-            }
+            if (methods.empty())
+                methods.emplace_back(this->method);
+
             drawMode = DrawMode::TRIANGLES;
-            methods->emplace_back(method);
+            methods.emplace_back(method);
         }
 
         DrawMode drawMode{ DrawMode::TRIANGLES };
         DrawBufferPtr buffer;
-        std::optional<PoolState> state;
-        std::optional<DrawMethod> method;
-        std::optional<std::vector<DrawMethod>> methods;
+        PoolState state;
+        DrawMethod method;
+        std::vector<DrawMethod> methods;
         std::function<void()> action{ nullptr };
     };
 
@@ -149,24 +157,28 @@ protected:
     };
 
 private:
+    static void addCoords(const DrawPool::DrawMethod& method, CoordsBuffer& buffer, DrawMode drawMode);
+
+    enum STATE_TYPE : uint32_t
+    {
+        STATE_OPACITY = 1 << 0,
+        STATE_CLIP_RECT = 1 << 1,
+        STATE_SHADER_PROGRAM = 1 << 2,
+        STATE_COMPOSITE_MODE = 1 << 3,
+        STATE_BLEND_EQUATION = 1 << 4,
+    };
+
     static constexpr uint8_t ARR_MAX_Z = MAX_Z + 1;
     static DrawPool* create(const DrawPoolType type);
 
-    DrawObject& getLastDrawObject()
-    {
-        auto& list = m_objects[m_currentFloor][m_currentOrder];
-        return list[list.size() - 1];
-    }
-
     void add(const Color& color, const TexturePtr& texture, const DrawPool::DrawMethod& method,
-        DrawMode drawMode = DrawMode::TRIANGLES, const DrawBufferPtr& drawBuffer = nullptr,
-        const CoordsBufferPtr& coordsBuffer = nullptr);
+             DrawMode drawMode = DrawMode::TRIANGLES, const DrawBufferPtr& drawBuffer = nullptr,
+             const CoordsBufferPtr& coordsBuffer = nullptr);
 
-    void addCoords(const DrawPool::DrawMethod& method, CoordsBuffer& buffer, DrawMode drawMode);
     void updateHash(const PoolState& state, const DrawPool::DrawMethod& method, size_t& stateHash, size_t& methodHash);
 
-    float getOpacity(bool lastDrawing = false) { return !lastDrawing ? m_state.opacity : getLastDrawObject().state->opacity; }
-    Rect getClipRect(bool lastDrawing = false) { return !lastDrawing ? m_state.clipRect : getLastDrawObject().state->clipRect; }
+    float getOpacity() { return m_state.opacity; }
+    Rect getClipRect() { return m_state.clipRect; }
 
     void setCompositionMode(CompositionMode mode, bool onLastDrawing = false);
     void setBlendEquation(BlendEquation equation, bool onLastDrawing = false);
@@ -174,12 +186,22 @@ private:
     void setOpacity(float opacity, bool onLastDrawing = false);
     void setShaderProgram(const PainterShaderProgramPtr& shaderProgram, bool onLastDrawing = false, const std::function<void()>& action = nullptr);
 
-    void resetState();
     void resetOpacity() { m_state.opacity = 1.f; }
     void resetClipRect() { m_state.clipRect = {}; }
-    void resetShaderProgram() { m_state.shaderProgram = nullptr; }
+    void resetShaderProgram() { m_state.shaderProgram = nullptr; m_state.action = nullptr; }
     void resetCompositionMode() { m_state.compositionMode = CompositionMode::NORMAL; }
     void resetBlendEquation() { m_state.blendEquation = BlendEquation::ADD; }
+    void resetTransformMatrix() { m_state.transformMatrix = DEFAULT_MATRIX3; }
+
+    void pushTransformMatrix();
+    void popTransformMatrix();
+    void scale(float x, float y);
+    void scale(float factor) { scale(factor, factor); }
+    void translate(float x, float y);
+    void translate(const Point& p) { translate(p.x, p.y); }
+    void rotate(float angle);
+    void rotate(float x, float y, float angle);
+    void rotate(const Point& p, float angle) { rotate(p.x, p.y, angle); }
 
     void clear();
     void flush()
@@ -202,6 +224,7 @@ private:
     uint8_t m_currentFloor{ 0 };
 
     uint16_t m_refreshTimeMS{ 0 };
+    uint32_t m_onlyOnceStateFlag{ 0 };
 
     PoolState m_state;
 
@@ -214,6 +237,12 @@ private:
     std::vector<DrawObject> m_objects[ARR_MAX_Z][static_cast<uint8_t>(DrawOrder::LAST)];
     stdext::map<size_t, DrawObject> m_objectsByhash;
 
+    std::vector<Matrix3> m_transformMatrixStack;
+
+    float m_scaleFactor{ 1.f };
+
+    std::mutex m_mutex;
+
     friend DrawPoolManager;
 };
 
@@ -223,17 +252,18 @@ public:
     void onBeforeDraw(std::function<void()> f) { m_beforeDraw = std::move(f); }
     void onAfterDraw(std::function<void()> f) { m_afterDraw = std::move(f); }
     void setSmooth(bool enabled) { m_framebuffer->setSmooth(enabled); }
-    void resize(const Size& size) { m_framebuffer->resize(size); }
+    void resize(const Size& size) { if (m_framebuffer->resize(size)) repaint(); }
     Size getSize() { return m_framebuffer->getSize(); }
+    bool isValid() const override { return m_framebuffer->isValid(); }
 
 protected:
-    DrawPoolFramed(const FrameBufferPtr& fb) : m_framebuffer(fb) {};
+    DrawPoolFramed() : m_framebuffer(std::make_shared<FrameBuffer>()) {};
 
     friend DrawPoolManager;
     friend DrawPool;
 
 private:
-    bool hasFrameBuffer() const override { return true; }
+    bool hasFrameBuffer() const override { return m_framebuffer->isValid(); }
     DrawPoolFramed* toPoolFramed() override { return this; }
 
     FrameBufferPtr m_framebuffer;
@@ -247,11 +277,11 @@ extern DrawPoolManager g_drawPool;
 class DrawBuffer
 {
 public:
-    DrawBuffer(DrawPool::DrawOrder order, bool agroup = true, bool isStatic = true) : m_agroup(agroup), m_order(order), m_static(isStatic) {}
+    DrawBuffer(DrawPool::DrawOrder order, bool agroup = true) : m_agroup(agroup), m_order(order) {}
     void agroup(bool v) { m_agroup = v; }
     void setOrder(DrawPool::DrawOrder order) { m_order = order; }
 
-    bool isStatic() { return m_static; }
+    void invalidate() { m_i = -1; }
 
 private:
     static DrawBufferPtr createTemporaryBuffer(DrawPool::DrawOrder order)
@@ -261,14 +291,13 @@ private:
         return buffer;
     }
 
-    void invalidate() { m_i = -1; }
-
     inline bool isValid() { return m_i != -1; }
     inline bool isTemporary() { return m_i == -2; }
 
     bool validate(const Point& p)
     {
-        if (m_ref != p) { m_ref = p; invalidate(); }
+        const size_t hash = p.hash();
+        if (m_ref != hash) { m_ref = hash; invalidate(); }
         return isValid();
     }
 
@@ -276,10 +305,9 @@ private:
 
     int m_i{ -1 };
     bool m_agroup{ true };
-    bool m_static{ true };
 
     DrawPool::DrawOrder m_order{ DrawPool::DrawOrder::FIRST };
-    Point m_ref;
+    size_t m_ref;
     size_t m_stateHash{ 0 };
 
     std::vector<size_t> m_hashs;

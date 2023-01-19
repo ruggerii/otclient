@@ -282,6 +282,7 @@ set(SOURCE_FILES
 	framework/core/unzipper.cpp
 	framework/core/unzipper.h
 	framework/core/timer.cpp
+	framework/discord/discord.cpp
 	framework/graphics/animatedtexture.cpp
 	framework/graphics/apngloader.cpp
 	framework/graphics/bitmapfont.cpp
@@ -446,6 +447,7 @@ if(MSVC)
 		asio::asio
 		OpenAL::OpenAL
 		LibLZMA::LibLZMA
+		winmm.lib
 	)
 elseif(ANDROID)
 	target_include_directories(${PROJECT_NAME}

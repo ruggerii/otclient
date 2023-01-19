@@ -28,13 +28,14 @@
 #include "map.h"
 #include "protocolgame.h"
 #include <framework/core/eventdispatcher.h>
+#include <framework/core/graphicalapplication.h>
 #include <framework/graphics/drawpoolmanager.h>
 
 Tile::Tile(const Position& position) : m_position(position) {}
 
 void Tile::drawThing(const ThingPtr& thing, const Point& dest, int flags, LightView* lightView)
 {
-    thing->draw(dest, true, flags, TextureType::NONE, m_selectType != TileSelectType::NONE && m_highlightThingId == thing->getThingType()->getId(), lightView);
+    thing->draw(dest, flags, TextureType::NONE, m_selectType != TileSelectType::NONE && m_highlightThingId == thing->getThingType()->getId(), lightView);
 
     if (thing->isItem()) {
         m_drawElevation += thing->getElevation();
@@ -52,13 +53,13 @@ void Tile::draw(const Point& dest, const MapPosInfo& mapRect, int flags, bool is
         if (!thing->isGround() && !thing->isGroundBorder())
             break;
 
-        drawThing(thing, dest - m_drawElevation * g_sprites.getScaleFactor(), flags, lightView);
+        drawThing(thing, dest - m_drawElevation * g_drawPool.getScaleFactor(), flags, lightView);
     }
 
     if (hasBottomItem()) {
         for (const auto& item : m_things) {
             if (!item->isOnBottom()) continue;
-            drawThing(item, dest - m_drawElevation * g_sprites.getScaleFactor(), flags, lightView);
+            drawThing(item, dest - m_drawElevation * g_drawPool.getScaleFactor(), flags, lightView);
         }
     }
 
@@ -66,7 +67,7 @@ void Tile::draw(const Point& dest, const MapPosInfo& mapRect, int flags, bool is
         for (auto it = m_things.rbegin(); it != m_things.rend(); ++it) {
             const auto& item = *it;
             if (!item->isCommon()) continue;
-            drawThing(item, dest - m_drawElevation * g_sprites.getScaleFactor(), flags, lightView);
+            drawThing(item, dest - m_drawElevation * g_drawPool.getScaleFactor(), flags, lightView);
         }
     }
 
@@ -89,7 +90,7 @@ void Tile::drawCreature(const Point& dest, const MapPosInfo& mapRect, int flags,
         for (const auto& thing : m_things) {
             if (!thing->isCreature() || thing->static_self_cast<Creature>()->isWalking()) continue;
 
-            const Point& cDest = dest - m_drawElevation * g_sprites.getScaleFactor();
+            const Point& cDest = dest - m_drawElevation * g_drawPool.getScaleFactor();
             drawThing(thing, cDest, flags, lightView);
             thing->static_self_cast<Creature>()->drawInformation(mapRect, cDest, isCovered, flags);
         }
@@ -97,8 +98,8 @@ void Tile::drawCreature(const Point& dest, const MapPosInfo& mapRect, int flags,
 
     for (const auto& creature : m_walkingCreatures) {
         const auto& cDest = Point(
-            dest.x + ((creature->getPosition().x - m_position.x) * SPRITE_SIZE - m_drawElevation) * g_sprites.getScaleFactor(),
-            dest.y + ((creature->getPosition().y - m_position.y) * SPRITE_SIZE - m_drawElevation) * g_sprites.getScaleFactor()
+            dest.x + ((creature->getPosition().x - m_position.x) * SPRITE_SIZE - m_drawElevation) * g_drawPool.getScaleFactor(),
+            dest.y + ((creature->getPosition().y - m_position.y) * SPRITE_SIZE - m_drawElevation) * g_drawPool.getScaleFactor()
         );
         drawThing(creature, cDest, flags, lightView);
         creature->drawInformation(mapRect, cDest, isCovered, flags);
@@ -120,7 +121,7 @@ void Tile::drawTop(const Point& dest, int flags, bool forceDraw, LightView* ligh
         }
 
         for (const auto& effect : m_effects) {
-            effect->drawEffect(dest - m_drawElevation * g_sprites.getScaleFactor(), flags, offsetX, offsetY, lightView);
+            effect->drawEffect(dest - m_drawElevation * g_drawPool.getScaleFactor(), flags, offsetX, offsetY, lightView);
         }
     }
 
@@ -180,7 +181,8 @@ void Tile::addThing(const ThingPtr& thing, int stackPos)
             if (mustOptimize && newEffect->getSize() > prevEffect->getSize()) {
                 prevEffect->canDraw(false);
             } else if (mustOptimize || newEffect->getId() == prevEffect->getId()) {
-                newEffect->waitFor(prevEffect);
+                if (!newEffect->waitFor(prevEffect))
+                    return;
             }
         }
 
@@ -229,15 +231,6 @@ void Tile::addThing(const ThingPtr& thing, int stackPos)
         }
     } else if (stackPos > static_cast<int>(size))
         stackPos = size;
-
-    // common items are drawn from back to front, so if the item being added now is common and has elevation,
-    // look for any item behind it and destroy its buffer.
-    if (hasCommonItem() && thing->isCommon() && thing->hasElevation()) {
-        for (auto it = m_things.rbegin(); it != m_things.rend(); ++it) {
-            if (const auto& item = *it; item->isCommon())
-                item->destroyBuffer();
-        }
-    }
 
     m_things.insert(m_things.begin() + stackPos, thing);
 
@@ -309,7 +302,7 @@ std::vector<CreaturePtr> Tile::getCreatures()
 {
     std::vector<CreaturePtr> creatures;
     if (hasCreature()) {
-        for (const ThingPtr& thing : m_things) {
+        for (const auto& thing : m_things) {
             if (thing->isCreature())
                 creatures.push_back(thing->static_self_cast<Creature>());
         }
@@ -337,7 +330,7 @@ ThingPtr Tile::getTopThing()
     if (isEmpty())
         return nullptr;
 
-    for (const ThingPtr& thing : m_things)
+    for (const auto& thing : m_things)
         if (thing->isCommon())
             return thing;
 
@@ -347,7 +340,7 @@ ThingPtr Tile::getTopThing()
 std::vector<ItemPtr> Tile::getItems()
 {
     std::vector<ItemPtr> items;
-    for (const ThingPtr& thing : m_things) {
+    for (const auto& thing : m_things) {
         if (!thing->isItem())
             continue;
 
@@ -462,7 +455,7 @@ ThingPtr Tile::getTopMoveThing()
         return nullptr;
 
     for (int8_t i = -1, s = m_things.size(); ++i < s;) {
-        const ThingPtr& thing = m_things[i];
+        const auto& thing = m_things[i];
         if (thing->isCommon()) {
             if (i > 0 && thing->isNotMoveable())
                 return m_things[i - 1];
@@ -471,7 +464,7 @@ ThingPtr Tile::getTopMoveThing()
         }
     }
 
-    for (const ThingPtr& thing : m_things) {
+    for (const auto& thing : m_things) {
         if (thing->isCreature())
             return thing;
     }
@@ -493,7 +486,7 @@ ThingPtr Tile::getTopMultiUseThing()
     }
 
     for (int8_t i = -1, s = m_things.size(); ++i < s;) {
-        const ThingPtr& thing = m_things[i];
+        const auto& thing = m_things[i];
         if (!thing->isGround() && !thing->isGroundBorder() && !thing->isOnBottom() && !thing->isOnTop()) {
             if (i > 0 && thing->isSplash())
                 return m_things[i - 1];
@@ -575,7 +568,7 @@ bool Tile::isClickable()
     bool hasGround = false;
     bool hasOnBottom = false;
     bool hasIgnoreLook = false;
-    for (const ThingPtr& thing : m_things) {
+    for (const auto& thing : m_things) {
         if (thing->isGround())
             hasGround = true;
         else if (thing->isOnBottom())
@@ -637,7 +630,7 @@ bool Tile::canShade(const MapViewPtr& mapView)
 
 bool Tile::hasBlockingCreature()
 {
-    for (const ThingPtr& thing : m_things)
+    for (const auto& thing : m_things)
         if (thing->isCreature() && !thing->static_self_cast<Creature>()->isPassable() && !thing->isLocalPlayer())
             return true;
     return false;
@@ -646,7 +639,7 @@ bool Tile::hasBlockingCreature()
 bool Tile::limitsFloorsView(bool isFreeView)
 {
     // ground and walls limits the view
-    const ThingPtr& firstThing = getThing(0);
+    const auto& firstThing = getThing(0);
     return firstThing && (firstThing->isGround() || (isFreeView ? firstThing->isOnBottom() : firstThing->isOnBottom() && firstThing->blockProjectile()));
 }
 

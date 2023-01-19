@@ -47,7 +47,7 @@ void MinimapBlock::update()
     if (m_image)
         m_image->resize(m_size);
     else
-        m_image = new Image(m_size);
+        m_image = std::make_shared<Image>(m_size);
 
     bool shouldDraw = false;
     for (uint_fast8_t x = 0; x < MMBLOCK_SIZE; ++x) {
@@ -67,7 +67,7 @@ void MinimapBlock::update()
         if (m_texture)
             m_texture->updateImage(m_image);
         else
-            m_texture = TexturePtr(new Texture(m_image, true));
+            m_texture = std::make_shared<Texture>(m_image, true, false, false, false);
     else
         m_texture.reset();
 
@@ -87,7 +87,7 @@ void Minimap::terminate() { clean(); }
 
 void Minimap::clean()
 {
-    std::lock_guard lock(m_lock);
+    std::scoped_lock lock(m_lock);
     for (uint_fast8_t i = 0; i <= MAX_Z; ++i)
         m_tileBlocks[i].clear();
 }
@@ -215,7 +215,7 @@ const MinimapTile& Minimap::getTile(const Position& pos)
 
 std::pair<MinimapBlock_ptr, MinimapTile> Minimap::threadGetTile(const Position& pos)
 {
-    std::lock_guard lock(m_lock);
+    std::scoped_lock lock(m_lock);
     static MinimapTile nulltile;
 
     if (pos.z <= MAX_Z && hasBlock(pos)) {

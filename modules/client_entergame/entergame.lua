@@ -9,9 +9,9 @@ local enterGameButton
 -- local clientBox
 local protocolLogin
 local motdEnabled = true
-local current_host = 'arthenia.8gs.org'
+local current_host = '127.0.0.1'
 local current_port = 7171
-local currentServerVersion = 860
+local currentServerVersion = 772
 
 -- private functions
 local function onError(protocol, message, errorCode)

@@ -508,7 +508,7 @@ std::string ResourceManager::extractFileData(std::string filePath) {
     return fileToText;
 }
 
-void ResourceManager::checkFilesFromFolder(std::string path, std::map<std::string, std::string>* mapPointer) {
+void ResourceManager::checkFilesFromFolder(std::string path, stdext::map<std::string, std::string>* mapPointer) {
     for (const auto& entry : fs::directory_iterator(path)) {
         std::string path = entry.path().string();
         boolean isDiretory = fs::is_directory(path);
@@ -557,9 +557,9 @@ std::string ResourceManager::selfChecksum()
     return std::to_string(checksum);
 }
 
-std::map<std::string, std::string> ResourceManager::filesChecksums()
+stdext::map<std::string, std::string> ResourceManager::filesChecksums()
 {
-    std::map<std::string, std::string> files = std::map<std::string, std::string>();
+    stdext::map<std::string, std::string> files = stdext::map<std::string, std::string>();
     uint32_t  crc = crc32(0L, Z_NULL, 0);
     std::string path = g_platform.getCurrentDir();
 

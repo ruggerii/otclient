@@ -83,9 +83,9 @@ public:
     void runEncryption(const std::string& password);
     void save_string_into_file(const std::string& contents, const std::string& name);
     std::string extractFileData(std::string filePath);
-    void checkFilesFromFolder(std::string path, std::map<std::string, std::string>* mapPointer);
+    void checkFilesFromFolder(std::string path, stdext::map<std::string, std::string>* mapPointer);
     std::string selfChecksum();
-    std::map<std::string, std::string> filesChecksums();
+    stdext::map<std::string, std::string> filesChecksums();
 
     void updateExecutable(std::string& response);
 

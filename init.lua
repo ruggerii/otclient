@@ -1,5 +1,7 @@
 -- this is the first file executed when the application starts
 -- we have to load the first modules form here
+-- set true so that modules are reloaded when modified. (Note: Use only dev mod)
+AUTO_RELOAD_MODULE = true
 
 -- updater
 Services = {

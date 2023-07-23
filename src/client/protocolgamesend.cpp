@@ -35,6 +35,14 @@ void ProtocolGame::send(const OutputMessagePtr& outputMessage)
     Protocol::send(outputMessage);
 }
 
+void ProtocolGame::sendWithoutBotProtection(const OutputMessagePtr& outputMessage)
+{
+    // avoid usage of automated sends (bot modules)
+    Protocol::send(outputMessage);
+}
+
+
+
 void ProtocolGame::sendExtendedOpcode(uint8_t opcode, const std::string& buffer)
 {
     if (m_enableSendExtendedOpcode) {
@@ -270,28 +278,28 @@ void ProtocolGame::sendTurnNorth()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientTurnNorth);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendTurnEast()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientTurnEast);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendTurnSouth()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientTurnSouth);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendTurnWest()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientTurnWest);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendEquipItem(int itemId, int countOrSubType)

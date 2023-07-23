@@ -1,0 +1,26 @@
+MainWindow
+  id: trainerWindow
+  !text: tr('Trainer')
+  height: 210
+  &save: true
+  draggable: false
+  HorizontalSeparator
+    id: firstHorizontalSeparator
+    width: 515
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom  
+
+  HorizontalSeparator
+    id: firstHorizontalSeparator
+    width: 515
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.top
+
+  CheckBox
+    id: antiIdleCheck
+    !text: tr('Anti-Idle')
+    !tooltip: tr('Remember account and password when starts client')
+    width: 100
+    @onClick: modules.game_trainer.changeStatus()

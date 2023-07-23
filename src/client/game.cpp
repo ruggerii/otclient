@@ -700,8 +700,8 @@ void Game::forceWalk(Otc::Direction direction)
 
 void Game::turn(Otc::Direction direction)
 {
-    if (!canPerformGameAction())
-        return;
+    //if (!canPerformGameAction())
+    //    return;
 
     switch (direction) {
         case Otc::North:

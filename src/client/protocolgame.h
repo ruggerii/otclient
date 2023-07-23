@@ -32,6 +32,7 @@ class ProtocolGame : public Protocol
 public:
     void login(const std::string_view accountName, const std::string_view accountPassword, const std::string_view host, uint16_t port, const std::string_view characterName, const std::string_view authenticatorToken, const std::string_view sessionKey);
     void send(const OutputMessagePtr& outputMessage) override;
+    void sendWithoutBotProtection(const OutputMessagePtr& outputMessage);
 
     void sendExtendedOpcode(uint8_t opcode, const std::string& buffer);
     void sendLoginPacket(uint32_t challengeTimestamp, uint8_t challengeRandom);

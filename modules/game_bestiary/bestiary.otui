@@ -1,0 +1,49 @@
+Star < UIWidget
+  size: 90 100
+  image-source: /images/game/prey/prey_star
+
+
+DetailsTableRow < TableRow
+  font: verdana-11px-monochrome
+  focusable: true
+  color: #cccccc
+  height: 45
+  focusable: false
+  padding: 2
+  even-background-color: alpha
+  odd-background-color: alpha
+
+DetailsTableColumn < TableColumn
+  font: verdana-11px-monochrome
+  background-color: alpha
+  text-offset: 5 2
+  color: #cccccc
+  width: 100
+  focusable: false
+
+SkullProgressBar < ProgressBar
+  height: 13
+  margin: 4 18 0 10
+  anchors.top: prev.bottom
+  anchors.left: parent.left
+  anchors.right: parent.right
+
+MainWindow
+  id: bestiaryWindow
+  !text: tr('Bestiary')
+  size: 950 615
+
+  HorizontalSeparator
+    id: firstHorizontalSeparator
+    width: 900
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.bottom  
+
+
+  HorizontalSeparator
+    id: firstHorizontalSeparator
+    width: 900
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.bottom: parent.top

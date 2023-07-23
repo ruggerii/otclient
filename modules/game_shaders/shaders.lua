@@ -58,7 +58,6 @@ OUTFIT_SHADERS = {{
 }, {
     name = 'Outfit - Ghost',
     frag = 'shaders/fragment/radialblur.frag',
-    drawColor = false
 }, {
     name = 'Outfit - Jelly',
     frag = 'shaders/fragment/heat.frag'

@@ -2560,7 +2560,8 @@ Outfit ProtocolGame::getOutfit(const InputMessagePtr& msg, bool parseMount/* = t
         lookType = msg->getU16();
     else
         lookType = msg->getU8();
-
+    
+        g_logger.info(stdext::format("lookType: %d", lookType));
     if (lookType != 0) {
         outfit.setCategory(ThingCategoryCreature);
         const uint8_t head = msg->getU8();
@@ -2568,7 +2569,6 @@ Outfit ProtocolGame::getOutfit(const InputMessagePtr& msg, bool parseMount/* = t
         const uint8_t legs = msg->getU8();
         const uint8_t feet = msg->getU8();
         const uint8_t addons = g_game.getFeature(Otc::GamePlayerAddons) ? msg->getU8() : 0;
-
         if (!g_things.isValidDatId(lookType, ThingCategoryCreature)) {
             g_logger.traceError(stdext::format("invalid outfit looktype %d", lookType));
             lookType = 0;

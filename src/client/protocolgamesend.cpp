@@ -750,7 +750,7 @@ void ProtocolGame::sendChangeOutfit(const Outfit& outfit)
     msg->addU8(outfit.getLegs());
     msg->addU8(outfit.getFeet());
 
-    if (g_game.getFeature(Otc::GamePlayerAddons))
+    if (g_game.getFeature(Otc::GamePlayerAddons) && outfit.getId() == 128)
         msg->addU8(outfit.getAddons());
 
     if (g_game.getFeature(Otc::GamePlayerMounts)) {

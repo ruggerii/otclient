@@ -2568,7 +2568,7 @@ Outfit ProtocolGame::getOutfit(const InputMessagePtr& msg, bool parseMount/* = t
         const uint8_t body = msg->getU8();
         const uint8_t legs = msg->getU8();
         const uint8_t feet = msg->getU8();
-        const uint8_t addons = g_game.getFeature(Otc::GamePlayerAddons) ? msg->getU8() : 0;
+        const uint8_t addons = (g_game.getFeature(Otc::GamePlayerAddons) && lookType == 128) ? msg->getU8() : 0;
         if (!g_things.isValidDatId(lookType, ThingCategoryCreature)) {
             g_logger.traceError(stdext::format("invalid outfit looktype %d", lookType));
             lookType = 0;

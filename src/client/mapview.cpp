@@ -408,7 +408,7 @@ void MapView::updateGeometry(const Size& visibleDimension)
 
         m_lightView->resize(lightSize, tileSize);
     }
-    g_mainDispatcher.addEvent([=, this]() {
+    g_mainDispatcher.addEvent([this, bufferSize]() {
         m_pool->getFrameBuffer()->resize(bufferSize);
     });
 
@@ -784,7 +784,11 @@ void MapView::setDrawLights(bool enable)
     m_drawingLight = enable;
 
     if (enable) {
-        m_lightView->resize(m_drawDimension, m_tileSize);
+        Size lightSize = g_map.getAwareRange().dimension();
+        if (m_drawDimension > lightSize)
+            lightSize = m_drawDimension;
+
+        m_lightView->resize(lightSize, m_tileSize);
         requestUpdateVisibleTiles();
     }
 

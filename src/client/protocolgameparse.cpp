@@ -560,8 +560,15 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
             prevOpcode = opcode;
         }
     } catch (const stdext::exception& e) {
-        g_logger.error(stdext::format("ProtocolGame parse message exception (%d bytes unread, last opcode is %d, prev opcode is %d): %s",
-                       msg->getUnreadSize(), opcode, prevOpcode, e.what()));
+        g_logger.error(stdext::format("ProtocolGame parse message exception (%d bytes, %d unread, last opcode is 0x%02x (%d), prev opcode is 0x%02x (%d)): %s"
+                                      "\nPacket has been saved to packet.log, you can use it to find what was wrong. (Protocol: %i)",
+                                      msg->getMessageSize(), msg->getUnreadSize(), opcode, opcode, prevOpcode, prevOpcode, e.what(), g_game.getProtocolVersion()));
+
+        std::ofstream packet("packet.log", std::ifstream::app);
+        if (!packet.is_open())
+            return;
+        packet << stdext::format("ProtocolGame parse message exception (%d bytes, %d unread, last opcode is 0x%02x (%d), prev opcode is 0x%02x (%d), proto: %i): %s\n",
+                                 msg->getMessageSize(), msg->getUnreadSize(), opcode, opcode, prevOpcode, prevOpcode, g_game.getProtocolVersion(), e.what());
     }
 }
 
@@ -2366,7 +2373,7 @@ void ProtocolGame::parseItemInfo(const InputMessagePtr& msg) const
     for (int_fast32_t i = 0; i < size; ++i) {
         const auto& item = std::make_shared<Item>();
         item->setId(msg->getU16());
-        item->setCountOrSubType(msg->getU8());
+        item->setCountOrSubType(g_game.getFeature(Otc::GameCountU16) ? msg->getU16() : msg->getU8());
 
         const auto& desc = msg->getString();
         list.emplace_back(item, desc);
@@ -2875,7 +2882,7 @@ ItemPtr ProtocolGame::getItem(const InputMessagePtr& msg, int id)
     }
 
     if (item->isStackable() || item->isFluidContainer() || item->isSplash() || item->isChargeable()) {
-        item->setCountOrSubType(msg->getU8());
+        item->setCountOrSubType(g_game.getFeature(Otc::GameCountU16) ? msg->getU16() : msg->getU8());
     }
 
     if (item->isContainer()) {
@@ -3549,10 +3556,6 @@ void ProtocolGame::parseError(const InputMessagePtr& msg)
 void ProtocolGame::parseMarketEnter(const InputMessagePtr& msg)
 {
     const uint8_t offers = msg->getU8();
-    if (const uint16_t depotLocker = msg->peekU16(); depotLocker == 0x00) {
-        return;
-    }
-
     std::vector<std::vector<uint16_t>> depotItems;
     const uint16_t itemsSent = msg->getU16();
     for (int_fast32_t i = 0; i < itemsSent; i++) {

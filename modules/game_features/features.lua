@@ -17,6 +17,7 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GameLoginPacketEncryption);
             g_game.enableFeature(GameNewOutfitProtocol);
             g_game.enableFeature(GamePlayerAddons);
+            -- g_game.enableFeature(GameSpellList);
         end
 
         if version >= 780 then

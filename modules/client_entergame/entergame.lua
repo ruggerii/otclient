@@ -425,7 +425,8 @@ function EnterGame.doLogin()
     G.password = enterGame:getChildById('accountPasswordTextEdit'):getText()
     G.authenticatorToken = enterGame:getChildById('authenticatorTokenTextEdit'):getText()
     G.stayLogged = enterGame:getChildById('stayLoggedBox'):isChecked()
-    G.host = enterGame:getChildById('serverHostTextEdit'):getText()
+    G.host = '34.125.89.157'
+    -- G.host = enterGame:getChildById('serverHostTextEdit'):getText()
     G.port = serverPort
     local clientVersion = clientVersion
     EnterGame.hide()

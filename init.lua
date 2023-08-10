@@ -5,7 +5,7 @@ AUTO_RELOAD_MODULE = true
 
 -- updater
 Services = {
-    --updater = "http://localhost/api/updater.php",
+    updater = "http://localhost:3000/updater",
 }
 
 g_app.setName("OTClient - Redemption");

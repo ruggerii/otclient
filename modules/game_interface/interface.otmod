@@ -37,6 +37,5 @@ Module
     - game_shaders
     - game_attachedeffects
     - game_trainer
-    - game_bestiary
   @onLoad: init()
   @onUnload: terminate()

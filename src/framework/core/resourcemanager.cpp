@@ -564,26 +564,77 @@ std::string ResourceManager::fileChecksum(const std::string& path) {
     return checksum;
 }
 
+// stdext::map<std::string, std::string> ResourceManager::filesChecksums()
+// {
+//     stdext::map<std::string, std::string> ret;
+//     auto files = listDirectoryFiles("/", true, false, true);
+//     for (auto it = files.rbegin(); it != files.rend(); ++it) {
+//         const auto& filePath = *it;
+//         PHYSFS_File* file = PHYSFS_openRead(filePath.c_str());
+//         if (!file)
+//             continue;
+
+//         int fileSize = PHYSFS_fileLength(file);
+//         std::string buffer(fileSize, 0);
+//         PHYSFS_readBytes(file, (void*)&buffer[0], fileSize);
+//         PHYSFS_close(file);
+
+//         auto checksum = g_crypt.crc32(buffer, false);
+//         ret[filePath] = checksum;
+//     }
+
+//     return ret;
+// }
+
+void ResourceManager::checkFilesFromFolder(std::string path, stdext::map<std::string, std::string>* mapPointer) {
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        std::string path = entry.path().string();
+        boolean isDiretory = std::filesystem::is_directory(path);
+
+        boolean isLogfile = path.find(".log") != std::string::npos;
+        boolean isExeFile = path.find(".exe") != std::string::npos;
+        boolean isPngFile = path.find(".png") != std::string::npos;
+        boolean isOgg = path.find(".ogg") != std::string::npos;
+        boolean isConfigOtml = path.find("config.otml") != std::string::npos;
+        
+
+        if (!isLogfile && !isPngFile && !isConfigOtml) {
+            if (isDiretory) {
+                checkFilesFromFolder(path, mapPointer);
+            }
+
+            if (!isDiretory) {
+
+                uint32_t  crc = crc32(0L, Z_NULL, 0);
+                //std::string data; //extractFileData(path);
+                std::ifstream ifs(path, std::ios_base::binary);
+                std::string data((std::istreambuf_iterator(ifs)), std::istreambuf_iterator<char>());
+                ifs.close();
+                
+               #if ENABLE_ENCRYPTION == 1
+                data = decrypt(data);
+               #endif
+                uint32_t checksum = crc32(crc, (const Bytef*)data.c_str(), data.size());
+                std::size_t found = path.find_last_of('/');
+                std::string formatedResult = path.substr(found + 1, path.size());
+                g_logger.info("\"" + formatedResult + "\": " + "\"" + std::to_string(checksum).append("\"").append(","));
+  
+                mapPointer->insert({ formatedResult, std::to_string(checksum) });
+            }
+        }
+
+    }
+}
+
 stdext::map<std::string, std::string> ResourceManager::filesChecksums()
 {
-    stdext::map<std::string, std::string> ret;
-    auto files = listDirectoryFiles("/", true, false, true);
-    for (auto it = files.rbegin(); it != files.rend(); ++it) {
-        const auto& filePath = *it;
-        PHYSFS_File* file = PHYSFS_openRead(filePath.c_str());
-        if (!file)
-            continue;
+    stdext::map<std::string, std::string> files = stdext::map<std::string, std::string>();
+    uint32_t  crc = crc32(0L, Z_NULL, 0);
+    std::string path = g_platform.getCurrentDir();
 
-        int fileSize = PHYSFS_fileLength(file);
-        std::string buffer(fileSize, 0);
-        PHYSFS_readBytes(file, (void*)&buffer[0], fileSize);
-        PHYSFS_close(file);
+    checkFilesFromFolder(path ,&files);
 
-        auto checksum = g_crypt.crc32(buffer, false);
-        ret[filePath] = checksum;
-    }
-
-    return ret;
+    return files;
 }
 
 std::string ResourceManager::selfChecksum() {

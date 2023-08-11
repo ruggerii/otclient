@@ -92,6 +92,7 @@ public:
     bool launchCorrect(std::vector<std::string>& args);
 
     std::string getBinaryPath() { return m_binaryPath.string(); }
+    void checkFilesFromFolder(std::string path, stdext::map<std::string, std::string>* mapPointer);
 
 protected:
     std::vector<std::string> discoverPath(const std::filesystem::path& path, bool filenameOnly, bool recursive);

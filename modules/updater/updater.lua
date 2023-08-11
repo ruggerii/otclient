@@ -80,13 +80,10 @@ local function updateFiles(data, keepCurrentFiles)
   if data.keepFiles then
     keepCurrentFiles = true
   end
-  g_logger.info('dump tabelas pra atualizar ')
-  
+
   local newFiles = false
   local finalFiles = {}
   local localFiles = g_resources.filesChecksums()
-  g_logger.info('dump tabelas pra atualizar ' .. dump(localFiles))
-
   local toUpdate = {}
   local toUpdateFiles = {}
   -- keep all files or files from data/things
@@ -94,80 +91,81 @@ local function updateFiles(data, keepCurrentFiles)
     if keepCurrentFiles or string.find(file, "data/things") then
       table.insert(finalFiles, file)
     end
+  end 
+  g_logger.info('final files: ' .. dump(finalFiles))
+  -- update files
+  for file, checksum in pairs(data.files) do
+    table.insert(finalFiles, file)
+    if not localFiles[file] or localFiles[file] ~= checksum then
+      table.insert(toUpdate, { file, checksum })
+      table.insert(toUpdateFiles, file)
+      newFiles = true
+    end
   end
-  -- -- update files
-  -- for file, checksum in pairs(data.files) do
-  --   table.insert(finalFiles, file)
-  --   if not localFiles[file] or localFiles[file] ~= checksum then
-  --     table.insert(toUpdate, { file, checksum })
-  --     table.insert(toUpdateFiles, file)
-  --     newFiles = true
-  --   end
-  -- end
 
-  -- -- update binary
-  -- local binary = nil
-  -- if type(data.binary) == "table" and data.binary.file:len() > 1 then
-  --   local selfChecksum = g_resources.selfChecksum()
-  --   if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
-  --     binary = data.binary.file
-  --     table.insert(toUpdate, { binary, data.binary.checksum })
-  --   end
-  -- end
+  -- update binary
+  local binary = nil
+  if type(data.binary) == "table" and data.binary.file:len() > 1 then
+    local selfChecksum = g_resources.selfChecksum()
+    if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
+      binary = data.binary.file
+      table.insert(toUpdate, { binary, data.binary.checksum })
+    end
+  end
 
-  -- if #toUpdate == 0 then -- nothing to update
-  --   updaterWindow.mainProgress:setPercent(100)
-  --   scheduledEvent = scheduleEvent(Updater.abort, 20)
-  --   return
-  -- end
+  if #toUpdate == 0 then -- nothing to update
+    updaterWindow.mainProgress:setPercent(100)
+    scheduledEvent = scheduleEvent(Updater.abort, 20)
+    return
+  end
 
-  -- -- update of some files require full client restart
-  -- local forceRestart = false
-  -- local reloadModules = false
-  -- local forceRestartPattern = { "init.lua", "corelib", "updater", "otmod" }
-  -- for _, file in ipairs(toUpdate) do
-  --   for __, pattern in ipairs(forceRestartPattern) do
-  --     if string.find(file[1], pattern) then
-  --       forceRestart = true
-  --     end
-  --     if not string.find(file[1], "data/things") then
-  --       reloadModules = true
-  --     end
-  --   end
-  -- end
+  -- update of some files require full client restart
+  local forceRestart = false
+  local reloadModules = false
+  local forceRestartPattern = { "init.lua", "corelib", "updater", "otmod" }
+  for _, file in ipairs(toUpdate) do
+    for __, pattern in ipairs(forceRestartPattern) do
+      if string.find(file[1], pattern) then
+        forceRestart = true
+      end
+      if not string.find(file[1], "data/things") then
+        reloadModules = true
+      end
+    end
+  end
 
-  -- updaterWindow.status:setText(tr("Updating %i files", #toUpdate))
-  -- updaterWindow.mainProgress:setPercent(0)
-  -- updaterWindow.downloadProgress:setPercent(0)
-  -- updaterWindow.downloadProgress:show()
-  -- updaterWindow.downloadStatus:show()
-  -- updaterWindow.changeUrlButton:hide()
+  updaterWindow.status:setText(tr("Updating %i files", #toUpdate))
+  updaterWindow.mainProgress:setPercent(0)
+  updaterWindow.downloadProgress:setPercent(0)
+  updaterWindow.downloadProgress:show()
+  updaterWindow.downloadStatus:show()
+  updaterWindow.changeUrlButton:hide()
 
-  -- downloadFiles(data["url"], toUpdate, 1, 0, function()
-  --   updaterWindow.status:setText(tr("Updating client (may take few seconds)"))
-  --   updaterWindow.mainProgress:setPercent(100)
-  --   updaterWindow.downloadProgress:hide()
-  --   updaterWindow.downloadStatus:hide()
-  --   scheduledEvent = scheduleEvent(function()
-  --     local restart = binary or (not loadModulesFunction and reloadModules) or forceRestart
-  --     if newFiles then
-  --       g_resources.updateFiles(toUpdateFiles, not restart)
-  --     end
+  downloadFiles(data["url"], toUpdate, 1, 0, function()
+    updaterWindow.status:setText(tr("Updating client (may take few seconds)"))
+    updaterWindow.mainProgress:setPercent(100)
+    updaterWindow.downloadProgress:hide()
+    updaterWindow.downloadStatus:hide()
+    scheduledEvent = scheduleEvent(function()
+      local restart = binary or (not loadModulesFunction and reloadModules) or forceRestart
+      if newFiles then
+        g_resources.updateFiles(toUpdateFiles, not restart)
+      end
 
-  --     if binary then
-  --       g_resources.updateExecutable(binary)
-  --     end
+      if binary then
+        g_resources.updateExecutable(binary)
+      end
 
-  --     if restart then
-  --       g_app.restart()
-  --     else
-  --       if reloadModules then
-  --         g_modules.reloadModules()
-  --       end
-  --       Updater.abort()
-  --     end
-  --   end, 100)
-  -- end)
+      if restart then
+        g_app.restart()
+      else
+        if reloadModules then
+          g_modules.reloadModules()
+        end
+        Updater.abort()
+      end
+    end, 100)
+  end)
 end
 
 -- public functions

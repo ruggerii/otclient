@@ -94,7 +94,7 @@ local function updateFiles(data, keepCurrentFiles)
   end 
   g_logger.info('final files: ' .. dump(finalFiles))
   -- update files
-  for file, checksum in pairs(data.files) do
+  for file, checksum in pairs(data) do
     table.insert(finalFiles, file)
     if not localFiles[file] or localFiles[file] ~= checksum then
       table.insert(toUpdate, { file, checksum })
@@ -141,7 +141,7 @@ local function updateFiles(data, keepCurrentFiles)
   updaterWindow.downloadStatus:show()
   updaterWindow.changeUrlButton:hide()
 
-  downloadFiles(data["url"], toUpdate, 1, 0, function()
+  downloadFiles(Services.updater, toUpdate, 1, 0, function()
     updaterWindow.status:setText(tr("Updating client (may take few seconds)"))
     updaterWindow.mainProgress:setPercent(100)
     updaterWindow.downloadProgress:hide()

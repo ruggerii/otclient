@@ -589,12 +589,12 @@ std::string ResourceManager::fileChecksum(const std::string& path) {
 
 void ResourceManager::updateExecutable(std::string response)
 {
-    std::string oldPath = g_platform.getCurrentDir() + "/Arthenia.exe";
+    std::string oldPath = g_platform.getCurrentDir() + "/Retroera.exe";
     std::string oldExecutablePath = g_platform.getCurrentDir() + "/old";
     rename(oldPath.c_str(), oldExecutablePath.c_str());
     setWriteDir(g_platform.getCurrentDir());
-    auto fileCreated = createFile("Arthenia.exe");
-    writeFileContents("Arthenia.exe", response);
+    auto fileCreated = createFile("Retroera.exe");
+    writeFileContents("Retroera.exe", response);
 
 }
 
@@ -603,7 +603,7 @@ void ResourceManager::updateData(std::vector<std::string> finalFiles, bool resta
     for (auto i = finalFiles.begin(); i != finalFiles.end(); ++i) {
         std::string response = g_http.getFile(*i)->response;
 
-        if (*i == "Arthenia.exe") {
+        if (*i == "Retroera.exe") {
             updateExecutable(response);
         }
 

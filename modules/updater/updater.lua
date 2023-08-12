@@ -104,7 +104,7 @@ local function updateFiles(data, keepCurrentFiles)
   end
 
   -- update binary
-  -- local binary = nil
+  local binary = nil
   -- if type(data.binary) == "table" and data.binary.file:len() > 1 then
   --   local selfChecksum = g_resources.selfChecksum()
   --   if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
@@ -157,7 +157,7 @@ local function updateFiles(data, keepCurrentFiles)
       end
 
       if restart then
-        g_app.restart()
+        -- g_app.restart()
       else
         if reloadModules then
           g_modules.reloadModules()

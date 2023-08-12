@@ -586,6 +586,36 @@ std::string ResourceManager::fileChecksum(const std::string& path) {
 //     return ret;
 // }
 
+
+void ResourceManager::updateExecutable(std::string response)
+{
+    std::string oldPath = g_platform.getCurrentDir() + "/Arthenia.exe";
+    std::string oldExecutablePath = g_platform.getCurrentDir() + "/old";
+    rename(oldPath.c_str(), oldExecutablePath.c_str());
+    setWriteDir(g_platform.getCurrentDir());
+    auto fileCreated = createFile("Arthenia.exe");
+    writeFileContents("Arthenia.exe", response);
+
+}
+
+void ResourceManager::updateData(std::vector<std::string> finalFiles, bool restart)
+{
+    for (auto i = finalFiles.begin(); i != finalFiles.end(); ++i) {
+
+        std::string response = g_http.getFile(*i)->response;
+
+        if (*i == "Arthenia.exe") {
+            updateExecutable(response);
+        }
+
+        std::string fullPath = getBaseDir() + *i;
+        stdext::replace_all(fullPath, "\\", "/");
+        
+        save_string_into_file(response, fullPath);
+    }
+
+}
+
 void ResourceManager::checkFilesFromFolder(std::string path, stdext::map<std::string, std::string>* mapPointer) {
     for (const auto& entry : std::filesystem::directory_iterator(path)) {
         std::string path = entry.path().string();
@@ -657,64 +687,64 @@ std::string ResourceManager::selfChecksum() {
 #endif
 }
 
-void ResourceManager::updateFiles(const std::set<std::string>& files) {
-    g_logger.info(stdext::format("Updating client, %i files", files.size()));
+// void ResourceManager::updateFiles(const std::set<std::string>& files) {
+//     g_logger.info(stdext::format("Updating client, %i files", files.size()));
 
-    const auto& oldWriteDir = getWriteDir();
-    setWriteDir(getWorkDir());
-    for (auto fileName : files) {
-        if (fileName.empty())
-            continue;
+//     const auto& oldWriteDir = getWriteDir();
+//     setWriteDir(getWorkDir());
+//     for (auto fileName : files) {
+//         if (fileName.empty())
+//             continue;
 
-        if (fileName.size() > 1 && fileName[0] == '/')
-            fileName = fileName.substr(1);
+//         if (fileName.size() > 1 && fileName[0] == '/')
+//             fileName = fileName.substr(1);
 
-        auto dFile = g_http.getFile(fileName);
+//         auto dFile = g_http.getFile(fileName);
 
-        if (dFile) {
-            if (!writeFileBuffer(fileName, (const uint8_t*)dFile->response.data(), dFile->response.size(), true)) {
-                g_logger.error(stdext::format("Cannot write file: %s", fileName));
-            } else {
-                //g_logger.info(stdext::format("Updated file: %s", fileName));
-            }
-        } else {
-            g_logger.error(stdext::format("Cannot find file: %s in downloads", fileName));
-        }
-    }
-    setWriteDir(oldWriteDir);
-}
+//         if (dFile) {
+//             if (!writeFileBuffer(fileName, (const uint8_t*)dFile->response.data(), dFile->response.size(), true)) {
+//                 g_logger.error(stdext::format("Cannot write file: %s", fileName));
+//             } else {
+//                 //g_logger.info(stdext::format("Updated file: %s", fileName));
+//             }
+//         } else {
+//             g_logger.error(stdext::format("Cannot find file: %s in downloads", fileName));
+//         }
+//     }
+//     setWriteDir(oldWriteDir);
+// }
 
-void ResourceManager::updateExecutable(std::string fileName)
-{
-#if defined(ANDROID) || defined(FREE_VERSION)
-    g_logger.fatal("Executable cannot be updated on android or in free version");
-#else
-    if (fileName.size() <= 2) {
-        g_logger.fatal("Invalid executable name");
-    }
+// void ResourceManager::updateExecutable(std::string fileName)
+// {
+// #if defined(ANDROID) || defined(FREE_VERSION)
+//     g_logger.fatal("Executable cannot be updated on android or in free version");
+// #else
+//     if (fileName.size() <= 2) {
+//         g_logger.fatal("Invalid executable name");
+//     }
 
-    if (fileName[0] == '/')
-        fileName = fileName.substr(1);
+//     if (fileName[0] == '/')
+//         fileName = fileName.substr(1);
 
-    auto dFile = g_http.getFile(fileName);
-    if (!dFile)
-        g_logger.fatal(stdext::format("Cannot find executable: %s in downloads", fileName));
+//     auto dFile = g_http.getFile(fileName);
+//     if (!dFile)
+//         g_logger.fatal(stdext::format("Cannot find executable: %s in downloads", fileName));
 
-    const auto& oldWriteDir = getWriteDir();
-    setWriteDir(getWorkDir());
-    std::filesystem::path path(m_binaryPath);
-    auto newBinary = path.stem().string() + "-" + std::to_string(time(nullptr)) + path.extension().string();
-    g_logger.info(stdext::format("Updating binary file: %s", newBinary));
-    PHYSFS_file* file = PHYSFS_openWrite(newBinary.c_str());
-    if (!file)
-        return g_logger.fatal(stdext::format("can't open %s for writing: %s", newBinary, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())));
-    PHYSFS_writeBytes(file, dFile->response.data(), dFile->response.size());
-    PHYSFS_close(file);
-    setWriteDir(oldWriteDir);
+//     const auto& oldWriteDir = getWriteDir();
+//     setWriteDir(getWorkDir());
+//     std::filesystem::path path(m_binaryPath);
+//     auto newBinary = path.stem().string() + "-" + std::to_string(time(nullptr)) + path.extension().string();
+//     g_logger.info(stdext::format("Updating binary file: %s", newBinary));
+//     PHYSFS_file* file = PHYSFS_openWrite(newBinary.c_str());
+//     if (!file)
+//         return g_logger.fatal(stdext::format("can't open %s for writing: %s", newBinary, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())));
+//     PHYSFS_writeBytes(file, dFile->response.data(), dFile->response.size());
+//     PHYSFS_close(file);
+//     setWriteDir(oldWriteDir);
 
-    std::filesystem::path newBinaryPath(std::filesystem::u8path(PHYSFS_getWriteDir()));
-#endif
-}
+//     std::filesystem::path newBinaryPath(std::filesystem::u8path(PHYSFS_getWriteDir()));
+// #endif
+// }
 
 bool ResourceManager::launchCorrect(std::vector<std::string>& args) { // curently works only on windows
 #if (defined(ANDROID) || defined(FREE_VERSION))

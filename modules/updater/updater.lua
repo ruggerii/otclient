@@ -39,7 +39,7 @@ local function downloadFiles(url, files, index, retries, doneCallback)
   updaterWindow.downloadProgress:setPercent(0)
   updaterWindow.mainProgress:setPercent(math.floor(100 * index / #files))
 
-  httpOperationId = HTTP.download(url .. file, file,
+  httpOperationId = HTTP.download(url .. "?file="..file, file,
     function(file, checksum, err)
       -- if not err and checksum ~= file_checksum then
       --   err = "Invalid checksum of: " .. file .. ".\nShould be " .. file_checksum .. ", is: " .. checksum

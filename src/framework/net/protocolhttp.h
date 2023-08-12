@@ -212,7 +212,8 @@ public:
     {
         if (!path.empty() && path[0] == '/')
             path = path.substr(1);
-        const auto it = m_downloads.find(path);
+            g_logger.info("URL    ?file=" + path);
+        const auto it = m_downloads.find("?file=" + path);
         if (it == m_downloads.end())
             return nullptr;
         return it->second;

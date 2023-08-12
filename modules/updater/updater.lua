@@ -104,14 +104,14 @@ local function updateFiles(data, keepCurrentFiles)
   end
 
   -- update binary
-  local binary = nil
-  if type(data.binary) == "table" and data.binary.file:len() > 1 then
-    local selfChecksum = g_resources.selfChecksum()
-    if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
-      binary = data.binary.file
-      table.insert(toUpdate, { binary, data.binary.checksum })
-    end
-  end
+  -- local binary = nil
+  -- if type(data.binary) == "table" and data.binary.file:len() > 1 then
+  --   local selfChecksum = g_resources.selfChecksum()
+  --   if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
+  --     binary = data.binary.file
+  --     table.insert(toUpdate, { binary, data.binary.checksum })
+  --   end
+  -- end
 
   if #toUpdate == 0 then -- nothing to update
     updaterWindow.mainProgress:setPercent(100)
@@ -149,7 +149,7 @@ local function updateFiles(data, keepCurrentFiles)
     scheduledEvent = scheduleEvent(function()
       local restart = binary or (not loadModulesFunction and reloadModules) or forceRestart
       if newFiles then
-        g_resources.updateFiles(toUpdateFiles, not restart)
+        g_resources.updateData(toUpdateFiles, not restart)
       end
 
       if binary then

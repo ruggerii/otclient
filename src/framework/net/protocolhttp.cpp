@@ -382,9 +382,9 @@ void HttpSession::on_request_sent(const std::error_code& ec, size_t /*bytes_tran
                 asio::buffers_begin(m_response.data()) + size);
             m_response.consume(size);
 
-            const size_t pos = header.find("Content-Length: ");
+            size_t pos = header.find("Content-Length: ");
             if (pos != std::string::npos) {
-                const size_t len = std::strtoul(
+                size_t len = std::strtoul(
                     header.c_str() + pos + sizeof("Content-Length: ") - 1,
                     nullptr, 10);
                 m_result->size = len - m_response.size();
@@ -398,27 +398,27 @@ void HttpSession::on_request_sent(const std::error_code& ec, size_t /*bytes_tran
             });
         });
     } else {
+     
         asio::async_read_until(
             m_socket, m_response, "\r\n\r\n",
             [this](const std::error_code& ec, size_t size) {
+
             if (ec) {
                 onError("HttpSession error receiving header " + m_url + ": " + ec.message());
                 return;
             }
+            
             std::string header(
                 asio::buffers_begin(m_response.data()),
                 asio::buffers_begin(m_response.data()) + size);
             m_response.consume(size);
 
-            const size_t pos = header.find("Content-Length: ");
+            size_t pos = header.find("Content-Length: ");
             if (pos != std::string::npos) {
-                const size_t len = std::strtoul(
+                size_t len = std::strtoul(
                     header.c_str() + pos + sizeof("Content-Length: ") - 1,
                     nullptr, 10);
                 m_result->size = len - m_response.size();
-            } else if (m_checkContentLength) {
-                onError("HttpSession error receiving header " + m_url + ": " + "Content-Length not found");
-                return;
             }
 
             asio::async_read(m_socket, m_response,

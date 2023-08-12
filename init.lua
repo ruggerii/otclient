@@ -8,8 +8,8 @@ Services = {
     updater = "http://localhost:3000/updater",
 }
 
-g_app.setName("OTClient - Redemption");
-g_app.setCompactName("otclient");
+g_app.setName("Retroera");
+g_app.setCompactName("Retroera");
 g_app.setOrganizationName("otbr");
 
 g_app.hasUpdater = function()

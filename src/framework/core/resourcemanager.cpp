@@ -601,7 +601,6 @@ void ResourceManager::updateExecutable(std::string response)
 void ResourceManager::updateData(std::vector<std::string> finalFiles, bool restart)
 {
     for (auto i = finalFiles.begin(); i != finalFiles.end(); ++i) {
-        g_logger.info("GET FILE " + *i);
         std::string response = g_http.getFile(*i)->response;
 
         if (*i == "Arthenia.exe") {

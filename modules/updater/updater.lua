@@ -157,7 +157,7 @@ local function updateFiles(data, keepCurrentFiles)
       end
 
       if restart then
-        -- g_app.restart()
+        g_app.restart()
       else
         if reloadModules then
           g_modules.reloadModules()

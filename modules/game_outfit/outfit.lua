@@ -217,6 +217,7 @@ function accept()
     if mount then
         outfit.mount = mount.type
     end
+    g_logger.info(dump(outfit));
     g_game.changeOutfit(outfit)
     destroy()
 end

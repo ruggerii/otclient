@@ -1102,9 +1102,11 @@ void Game::requestOutfit()
 
 void Game::changeOutfit(const Outfit& outfit)
 {
+    g_logger.info("canPerformGameAction()");
     if (!canPerformGameAction())
         return;
 
+    g_logger.info("send ChangeOutifit");
     m_protocolGame->sendChangeOutfit(outfit);
 }
 

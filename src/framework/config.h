@@ -38,7 +38,7 @@
 // You can compile it once and use this executable to only encrypt client files once with command --encrypt which will be using password below.
 #define ENABLE_ENCRYPTION_BUILDER 0
 // for security reasons make sure you are using password with at last 100+ characters
-#define ENCRYPTION_PASSWORD "SET_YOUR_PASSWORD_HERE"
+#define ENCRYPTION_PASSWORD "~)SZDq£DRN_+£'h'Ebl|S'21H$aHW|Pt2zeG,-kdjPe7Q82'`x"
 
 // DISCORD RPC (https://discord.com/developers/applications)
 // Note: Only for VSSolution, doesn't work with CMAKE
@@ -50,6 +50,6 @@
 #define SHOW_CHARACTER_LEVEL_RPC 1 // 1 to enable | 0 to disable
 #define SHOW_CHARACTER_WORLD_RPC 1 // 1 to enable | 0 to disable
 #define OFFLINE_RPC_TEXT "Selecting Character..." // Message at client startup | offline character
-#define STATE_RPC_TEXT "github.com/mehah/otclient" // State Text
+#define STATE_RPC_TEXT "Retroera" // State Text
 #define RPC_LARGE_IMAGE "rpc-logo" // Large Image Name (Imported to API)
 #define RPC_LARGE_TEXT "OTClient - Redemption" // Large Text (Text showed at tooltip large image)

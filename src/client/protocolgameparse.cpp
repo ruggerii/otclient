@@ -2558,6 +2558,12 @@ int ProtocolGame::setTileDescription(const InputMessagePtr& msg, Position positi
     return 0;
 }
 
+bool isValidAddon(uint16_t lookType) {
+std::list enabledOutfitList = {147,148,149,150,155,156,157,158,252,257,258,262,259,128,143,144,145,146,151,152,153,154,251,256,263,261,260};
+bool found = (std::find(enabledOutfitList.begin(), enabledOutfitList.end(), lookType) != enabledOutfitList.end());
+return found;
+}
+
 Outfit ProtocolGame::getOutfit(const InputMessagePtr& msg, bool parseMount/* = true*/) const
 {
     Outfit outfit;
@@ -2575,7 +2581,7 @@ Outfit ProtocolGame::getOutfit(const InputMessagePtr& msg, bool parseMount/* = t
         const uint8_t body = msg->getU8();
         const uint8_t legs = msg->getU8();
         const uint8_t feet = msg->getU8();
-        const uint8_t addons = (g_game.getFeature(Otc::GamePlayerAddons) && lookType == 128) ? msg->getU8() : 0;
+        const uint8_t addons = (g_game.getFeature(Otc::GamePlayerAddons) && isValidAddon(lookType)) ? msg->getU8() : 0;
         if (!g_things.isValidDatId(lookType, ThingCategoryCreature)) {
             g_logger.traceError(stdext::format("invalid outfit looktype %d", lookType));
             lookType = 0;

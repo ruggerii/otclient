@@ -41,8 +41,6 @@ void ProtocolGame::sendWithoutBotProtection(const OutputMessagePtr& outputMessag
     Protocol::send(outputMessage);
 }
 
-
-
 void ProtocolGame::sendExtendedOpcode(uint8_t opcode, const std::string& buffer)
 {
     if (m_enableSendExtendedOpcode) {
@@ -740,6 +738,22 @@ void ProtocolGame::sendRequestOutfit()
     send(msg);
 }
 
+bool verifyIfIsOldOutfit(uint16_t lookType)
+{
+    const std::list<uint16_t> OLD_SKIN_LIST = { (uint16_t) 136, 
+        (uint16_t) 137, (uint16_t) 138, (uint16_t) 139, 
+        (uint16_t) 140, (uint16_t) 141, (uint16_t) 142, 
+        (uint16_t) 129, (uint16_t) 130, (uint16_t) 131, 
+        (uint16_t) 132, (uint16_t) 133, (uint16_t) 134 };
+    return !(std::find(OLD_SKIN_LIST.begin(), OLD_SKIN_LIST.end(), lookType) != OLD_SKIN_LIST.end());
+}
+
+bool isValidAddon2(uint16_t lookType) {
+std::list enabledOutfitList = {147,148,149,150,155,156,157,158,252,257,258,262,259,128,143,144,145,146,151,152,153,154,251,256,263,261,260};
+bool found = (std::find(enabledOutfitList.begin(), enabledOutfitList.end(), lookType) != enabledOutfitList.end());
+return found;
+}
+
 void ProtocolGame::sendChangeOutfit(const Outfit& outfit)
 {
     const auto& msg = std::make_shared<OutputMessage>();
@@ -759,7 +773,7 @@ void ProtocolGame::sendChangeOutfit(const Outfit& outfit)
     msg->addU8(outfit.getLegs());
     msg->addU8(outfit.getFeet());
 
-    if (g_game.getFeature(Otc::GamePlayerAddons) && outfit.getId() == 128)
+    if (g_game.getFeature(Otc::GamePlayerAddons) && isValidAddon2(outfit.getId()))
         msg->addU8(outfit.getAddons());
 
     if (g_game.getFeature(Otc::GamePlayerMounts)) {

@@ -18,10 +18,9 @@ Panel
     text-auto-resize: true
     margin-top: 50
     color: #e98d02
-    text: OTCLient Redemption
+    text: RetroEra - Based 7.72
     font: verdana-11px-rounded
-    font-scale: 4
-    shader: Map - Party
+    font-scale: 3
 
   UILabel
     id: clientVersionLabel

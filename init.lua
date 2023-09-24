@@ -5,7 +5,7 @@ AUTO_RELOAD_MODULE = true
 
 -- updater
 Services = {
-    updater = "http://localhost:3000/updater",
+    -- updater = "http://localhost:3003/updater",
 }
 
 g_app.setName("Retroera");

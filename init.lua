@@ -6,6 +6,7 @@ AUTO_RELOAD_MODULE = true
 -- updater
 Services = {
     -- updater = "http://localhost:3003/updater",
+    serverUrl = '127.0.0.1'
 }
 
 g_app.setName("Retroera");
@@ -46,7 +47,7 @@ g_resources.setupUserWriteDir(('%s/'):format(g_app.getCompactName()))
 g_resources.searchAndAddPackages('/', '.otpkg', true)
 
 -- load settings
-g_configs.loadSettings('/config.otml')
+g_configs.loadSettings('config.otml')
 
 g_modules.discoverModules()
 

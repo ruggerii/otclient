@@ -1,22 +1,12 @@
+FoodItem < UIActionSlot
+
 MainWindow
   id: trainerWindow
   !text: tr('Trainer')
-  height: 210
+  width: 250
+  @onOpen: modules.game_trainer.onMiniWindowOpen()
+  @onClose: modules.game_trainer.onMiniWindowClose()
   &save: true
-  draggable: false
-  HorizontalSeparator
-    id: firstHorizontalSeparator
-    width: 515
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.bottom: parent.bottom  
-
-  HorizontalSeparator
-    id: firstHorizontalSeparator
-    width: 515
-    anchors.left: parent.left
-    anchors.right: parent.right
-    anchors.bottom: parent.top
 
   CheckBox
     id: antiIdleCheck
@@ -24,3 +14,37 @@ MainWindow
     !tooltip: tr('Remember account and password when starts client')
     width: 100
     @onClick: modules.game_trainer.changeStatus()
+    anchors.left: parent.left
+    anchors.top: parent.top
+    
+  CheckBox
+    id: manaTrainingCheckBox
+    !text: tr('ML Trainer')
+    text-auto-resize: true
+    margin-top: 10
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    @onClick: modules.game_trainer.magLevelTrainer()
+
+  TextEdit
+    id: spellNameTextEdit
+    margin-top: 5
+    width: 100
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+
+  MenuLabel
+    id: minManaLabel
+    !text: tr('min Mana')
+    text-auto-resize: true
+    margin-top: 1
+    margin-left: 10
+    anchors.top: manaTrainingCheckBox.top
+    anchors.left: manaTrainingCheckBox.right
+  
+  TextEdit
+    id: minMana
+    width: 40
+    margin-left: 10
+    anchors.top: spellNameTextEdit.top
+    anchors.left: spellNameTextEdit.right

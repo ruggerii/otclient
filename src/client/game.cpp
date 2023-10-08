@@ -966,7 +966,8 @@ void Game::talk(const std::string_view message)
 
 void Game::talkChannel(Otc::MessageMode mode, int channelId, const std::string_view message)
 {
-    if (!canPerformGameAction() || message.empty())
+    //!canPerformGameAction() ||
+    if (message.empty())
         return;
 
     m_protocolGame->sendTalk(mode, channelId, "", message);

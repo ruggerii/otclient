@@ -548,7 +548,7 @@ void ProtocolGame::sendTalk(Otc::MessageMode mode, int channelId, const std::str
     }
 
     msg->addString(message);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendRequestChannels()

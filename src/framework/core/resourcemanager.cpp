@@ -564,26 +564,106 @@ std::string ResourceManager::fileChecksum(const std::string& path) {
     return checksum;
 }
 
-stdext::map<std::string, std::string> ResourceManager::filesChecksums()
+// stdext::map<std::string, std::string> ResourceManager::filesChecksums()
+// {
+//     stdext::map<std::string, std::string> ret;
+//     auto files = listDirectoryFiles("/", true, false, true);
+//     for (auto it = files.rbegin(); it != files.rend(); ++it) {
+//         const auto& filePath = *it;
+//         PHYSFS_File* file = PHYSFS_openRead(filePath.c_str());
+//         if (!file)
+//             continue;
+
+//         int fileSize = PHYSFS_fileLength(file);
+//         std::string buffer(fileSize, 0);
+//         PHYSFS_readBytes(file, (void*)&buffer[0], fileSize);
+//         PHYSFS_close(file);
+
+//         auto checksum = g_crypt.crc32(buffer, false);
+//         ret[filePath] = checksum;
+//     }
+
+//     return ret;
+// }
+
+
+void ResourceManager::updateExecutable(std::string response)
 {
-    stdext::map<std::string, std::string> ret;
-    auto files = listDirectoryFiles("/", true, false, true);
-    for (auto it = files.rbegin(); it != files.rend(); ++it) {
-        const auto& filePath = *it;
-        PHYSFS_File* file = PHYSFS_openRead(filePath.c_str());
-        if (!file)
-            continue;
+    std::string oldPath = g_platform.getCurrentDir() + "/Retroera.exe";
+    std::string oldExecutablePath = g_platform.getCurrentDir() + "/old";
+    rename(oldPath.c_str(), oldExecutablePath.c_str());
+    setWriteDir(g_platform.getCurrentDir());
+    auto fileCreated = createFile("Retroera.exe");
+    writeFileContents("Retroera.exe", response);
 
-        int fileSize = PHYSFS_fileLength(file);
-        std::string buffer(fileSize, 0);
-        PHYSFS_readBytes(file, (void*)&buffer[0], fileSize);
-        PHYSFS_close(file);
+}
 
-        auto checksum = g_crypt.crc32(buffer, false);
-        ret[filePath] = checksum;
+void ResourceManager::updateData(std::vector<std::string> finalFiles, bool restart)
+{
+    for (auto i = finalFiles.begin(); i != finalFiles.end(); ++i) {
+        std::string response = g_http.getFile(*i)->response;
+
+        if (*i == "Retroera.exe") {
+            updateExecutable(response);
+        }
+
+        std::string fullPath = getBaseDir() + *i;
+        stdext::replace_all(fullPath, "\\", "/");
+        
+        save_string_into_file(response, fullPath);
     }
 
-    return ret;
+}
+
+void ResourceManager::checkFilesFromFolder(std::string path, stdext::map<std::string, std::string>* mapPointer) {
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        std::string path = entry.path().string();
+        boolean isDiretory = std::filesystem::is_directory(path);
+
+        boolean isLogfile = path.find(".log") != std::string::npos;
+        boolean isExeFile = path.find(".exe") != std::string::npos;
+        boolean isPngFile = path.find(".png") != std::string::npos;
+        boolean isOgg = path.find(".ogg") != std::string::npos;
+        boolean isConfigOtml = path.find("config.otml") != std::string::npos;
+        
+
+        if (!isLogfile && !isPngFile && !isConfigOtml) {
+            if (isDiretory) {
+                checkFilesFromFolder(path, mapPointer);
+            }
+
+            if (!isDiretory) {
+
+                uint32_t  crc = crc32(0L, Z_NULL, 0);
+                //std::string data; //extractFileData(path);
+                std::ifstream ifs(path, std::ios_base::binary);
+                std::string data((std::istreambuf_iterator(ifs)), std::istreambuf_iterator<char>());
+                ifs.close();
+                
+               #if ENABLE_ENCRYPTION == 1
+                data = decrypt(data);
+               #endif
+                uint32_t checksum = crc32(crc, (const Bytef*)data.c_str(), data.size());
+                std::size_t found = path.find_last_of('/');
+                std::string formatedResult = path.substr(found + 1, path.size());
+                g_logger.info("\"" + formatedResult + "\": " + "\"" + std::to_string(checksum).append("\"").append(","));
+  
+                mapPointer->insert({ formatedResult, std::to_string(checksum) });
+            }
+        }
+
+    }
+}
+
+stdext::map<std::string, std::string> ResourceManager::filesChecksums()
+{
+    stdext::map<std::string, std::string> files = stdext::map<std::string, std::string>();
+    uint32_t  crc = crc32(0L, Z_NULL, 0);
+    std::string path = g_platform.getCurrentDir();
+
+    checkFilesFromFolder(path ,&files);
+
+    return files;
 }
 
 std::string ResourceManager::selfChecksum() {
@@ -606,64 +686,64 @@ std::string ResourceManager::selfChecksum() {
 #endif
 }
 
-void ResourceManager::updateFiles(const std::set<std::string>& files) {
-    g_logger.info(stdext::format("Updating client, %i files", files.size()));
+// void ResourceManager::updateFiles(const std::set<std::string>& files) {
+//     g_logger.info(stdext::format("Updating client, %i files", files.size()));
 
-    const auto& oldWriteDir = getWriteDir();
-    setWriteDir(getWorkDir());
-    for (auto fileName : files) {
-        if (fileName.empty())
-            continue;
+//     const auto& oldWriteDir = getWriteDir();
+//     setWriteDir(getWorkDir());
+//     for (auto fileName : files) {
+//         if (fileName.empty())
+//             continue;
 
-        if (fileName.size() > 1 && fileName[0] == '/')
-            fileName = fileName.substr(1);
+//         if (fileName.size() > 1 && fileName[0] == '/')
+//             fileName = fileName.substr(1);
 
-        auto dFile = g_http.getFile(fileName);
+//         auto dFile = g_http.getFile(fileName);
 
-        if (dFile) {
-            if (!writeFileBuffer(fileName, (const uint8_t*)dFile->response.data(), dFile->response.size(), true)) {
-                g_logger.error(stdext::format("Cannot write file: %s", fileName));
-            } else {
-                //g_logger.info(stdext::format("Updated file: %s", fileName));
-            }
-        } else {
-            g_logger.error(stdext::format("Cannot find file: %s in downloads", fileName));
-        }
-    }
-    setWriteDir(oldWriteDir);
-}
+//         if (dFile) {
+//             if (!writeFileBuffer(fileName, (const uint8_t*)dFile->response.data(), dFile->response.size(), true)) {
+//                 g_logger.error(stdext::format("Cannot write file: %s", fileName));
+//             } else {
+//                 //g_logger.info(stdext::format("Updated file: %s", fileName));
+//             }
+//         } else {
+//             g_logger.error(stdext::format("Cannot find file: %s in downloads", fileName));
+//         }
+//     }
+//     setWriteDir(oldWriteDir);
+// }
 
-void ResourceManager::updateExecutable(std::string fileName)
-{
-#if defined(ANDROID) || defined(FREE_VERSION)
-    g_logger.fatal("Executable cannot be updated on android or in free version");
-#else
-    if (fileName.size() <= 2) {
-        g_logger.fatal("Invalid executable name");
-    }
+// void ResourceManager::updateExecutable(std::string fileName)
+// {
+// #if defined(ANDROID) || defined(FREE_VERSION)
+//     g_logger.fatal("Executable cannot be updated on android or in free version");
+// #else
+//     if (fileName.size() <= 2) {
+//         g_logger.fatal("Invalid executable name");
+//     }
 
-    if (fileName[0] == '/')
-        fileName = fileName.substr(1);
+//     if (fileName[0] == '/')
+//         fileName = fileName.substr(1);
 
-    auto dFile = g_http.getFile(fileName);
-    if (!dFile)
-        g_logger.fatal(stdext::format("Cannot find executable: %s in downloads", fileName));
+//     auto dFile = g_http.getFile(fileName);
+//     if (!dFile)
+//         g_logger.fatal(stdext::format("Cannot find executable: %s in downloads", fileName));
 
-    const auto& oldWriteDir = getWriteDir();
-    setWriteDir(getWorkDir());
-    std::filesystem::path path(m_binaryPath);
-    auto newBinary = path.stem().string() + "-" + std::to_string(time(nullptr)) + path.extension().string();
-    g_logger.info(stdext::format("Updating binary file: %s", newBinary));
-    PHYSFS_file* file = PHYSFS_openWrite(newBinary.c_str());
-    if (!file)
-        return g_logger.fatal(stdext::format("can't open %s for writing: %s", newBinary, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())));
-    PHYSFS_writeBytes(file, dFile->response.data(), dFile->response.size());
-    PHYSFS_close(file);
-    setWriteDir(oldWriteDir);
+//     const auto& oldWriteDir = getWriteDir();
+//     setWriteDir(getWorkDir());
+//     std::filesystem::path path(m_binaryPath);
+//     auto newBinary = path.stem().string() + "-" + std::to_string(time(nullptr)) + path.extension().string();
+//     g_logger.info(stdext::format("Updating binary file: %s", newBinary));
+//     PHYSFS_file* file = PHYSFS_openWrite(newBinary.c_str());
+//     if (!file)
+//         return g_logger.fatal(stdext::format("can't open %s for writing: %s", newBinary, PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode())));
+//     PHYSFS_writeBytes(file, dFile->response.data(), dFile->response.size());
+//     PHYSFS_close(file);
+//     setWriteDir(oldWriteDir);
 
-    std::filesystem::path newBinaryPath(std::filesystem::u8path(PHYSFS_getWriteDir()));
-#endif
-}
+//     std::filesystem::path newBinaryPath(std::filesystem::u8path(PHYSFS_getWriteDir()));
+// #endif
+// }
 
 bool ResourceManager::launchCorrect(std::vector<std::string>& args) { // curently works only on windows
 #if (defined(ANDROID) || defined(FREE_VERSION))

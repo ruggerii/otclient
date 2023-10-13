@@ -35,6 +35,12 @@ void ProtocolGame::send(const OutputMessagePtr& outputMessage)
     Protocol::send(outputMessage);
 }
 
+void ProtocolGame::sendWithoutBotProtection(const OutputMessagePtr& outputMessage)
+{
+    // avoid usage of automated sends (bot modules)
+    Protocol::send(outputMessage);
+}
+
 void ProtocolGame::sendExtendedOpcode(uint8_t opcode, const std::string& buffer)
 {
     if (m_enableSendExtendedOpcode) {
@@ -270,28 +276,28 @@ void ProtocolGame::sendTurnNorth()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientTurnNorth);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendTurnEast()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientTurnEast);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendTurnSouth()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientTurnSouth);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendTurnWest()
 {
     const auto& msg = std::make_shared<OutputMessage>();
     msg->addU8(Proto::ClientTurnWest);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendEquipItem(int itemId, int countOrSubType)
@@ -542,7 +548,7 @@ void ProtocolGame::sendTalk(Otc::MessageMode mode, int channelId, const std::str
     }
 
     msg->addString(message);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendRequestChannels()
@@ -732,6 +738,22 @@ void ProtocolGame::sendRequestOutfit()
     send(msg);
 }
 
+bool verifyIfIsOldOutfit(uint16_t lookType)
+{
+    const std::list<uint16_t> OLD_SKIN_LIST = { (uint16_t) 136, 
+        (uint16_t) 137, (uint16_t) 138, (uint16_t) 139, 
+        (uint16_t) 140, (uint16_t) 141, (uint16_t) 142, 
+        (uint16_t) 129, (uint16_t) 130, (uint16_t) 131, 
+        (uint16_t) 132, (uint16_t) 133, (uint16_t) 134 };
+    return !(std::find(OLD_SKIN_LIST.begin(), OLD_SKIN_LIST.end(), lookType) != OLD_SKIN_LIST.end());
+}
+
+bool isValidAddon2(uint16_t lookType) {
+std::list enabledOutfitList = {147,148,149,150,155,156,157,158,252,257,258,262,259,128,143,144,145,146,151,152,153,154,251,256,263,261,260};
+bool found = (std::find(enabledOutfitList.begin(), enabledOutfitList.end(), lookType) != enabledOutfitList.end());
+return found;
+}
+
 void ProtocolGame::sendChangeOutfit(const Outfit& outfit)
 {
     const auto& msg = std::make_shared<OutputMessage>();
@@ -751,7 +773,7 @@ void ProtocolGame::sendChangeOutfit(const Outfit& outfit)
     msg->addU8(outfit.getLegs());
     msg->addU8(outfit.getFeet());
 
-    if (g_game.getFeature(Otc::GamePlayerAddons))
+    if (g_game.getFeature(Otc::GamePlayerAddons) && isValidAddon2(outfit.getId()))
         msg->addU8(outfit.getAddons());
 
     if (g_game.getFeature(Otc::GamePlayerMounts)) {

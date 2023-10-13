@@ -39,11 +39,11 @@ local function downloadFiles(url, files, index, retries, doneCallback)
   updaterWindow.downloadProgress:setPercent(0)
   updaterWindow.mainProgress:setPercent(math.floor(100 * index / #files))
 
-  httpOperationId = HTTP.download(url .. file, file,
+  httpOperationId = HTTP.download(url .. "?file="..file, file,
     function(file, checksum, err)
-      if not err and checksum ~= file_checksum then
-        err = "Invalid checksum of: " .. file .. ".\nShould be " .. file_checksum .. ", is: " .. checksum
-      end
+      -- if not err and checksum ~= file_checksum then
+      --   err = "Invalid checksum of: " .. file .. ".\nShould be " .. file_checksum .. ", is: " .. checksum
+      -- end
       if err then
         if retries >= Updater.maxRetries then
           Updater.error("Can't download file: " .. file .. ".\nError: " .. err)
@@ -64,7 +64,7 @@ end
 
 local function updateFiles(data, keepCurrentFiles)
   if not updaterWindow then return end
-
+  
   if type(data) ~= "table" then
     return Updater.error("Invalid data from updater api (not table)")
   end
@@ -73,9 +73,9 @@ local function updateFiles(data, keepCurrentFiles)
     return Updater.error(data.error)
   end
 
-  if not data.files or type(data.url) ~= 'string' or data.url:len() < 4 then
-    return Updater.error("Invalid data from updater api: " .. json.encode(data, 2))
-  end
+  -- if not data.files or type(data.url) ~= 'string' or data.url:len() < 4 then
+  --   return Updater.error("Invalid data from updater api: " .. json.encode(data, 2))
+  -- end
 
   if data.keepFiles then
     keepCurrentFiles = true
@@ -84,7 +84,6 @@ local function updateFiles(data, keepCurrentFiles)
   local newFiles = false
   local finalFiles = {}
   local localFiles = g_resources.filesChecksums()
-
   local toUpdate = {}
   local toUpdateFiles = {}
   -- keep all files or files from data/things
@@ -92,10 +91,10 @@ local function updateFiles(data, keepCurrentFiles)
     if keepCurrentFiles or string.find(file, "data/things") then
       table.insert(finalFiles, file)
     end
-  end
-
+  end 
+  g_logger.info('final files: ' .. dump(finalFiles))
   -- update files
-  for file, checksum in pairs(data.files) do
+  for file, checksum in pairs(data) do
     table.insert(finalFiles, file)
     if not localFiles[file] or localFiles[file] ~= checksum then
       table.insert(toUpdate, { file, checksum })
@@ -106,13 +105,13 @@ local function updateFiles(data, keepCurrentFiles)
 
   -- update binary
   local binary = nil
-  if type(data.binary) == "table" and data.binary.file:len() > 1 then
-    local selfChecksum = g_resources.selfChecksum()
-    if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
-      binary = data.binary.file
-      table.insert(toUpdate, { binary, data.binary.checksum })
-    end
-  end
+  -- if type(data.binary) == "table" and data.binary.file:len() > 1 then
+  --   local selfChecksum = g_resources.selfChecksum()
+  --   if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
+  --     binary = data.binary.file
+  --     table.insert(toUpdate, { binary, data.binary.checksum })
+  --   end
+  -- end
 
   if #toUpdate == 0 then -- nothing to update
     updaterWindow.mainProgress:setPercent(100)
@@ -142,7 +141,7 @@ local function updateFiles(data, keepCurrentFiles)
   updaterWindow.downloadStatus:show()
   updaterWindow.changeUrlButton:hide()
 
-  downloadFiles(data["url"], toUpdate, 1, 0, function()
+  downloadFiles(Services.updater, toUpdate, 1, 0, function()
     updaterWindow.status:setText(tr("Updating client (may take few seconds)"))
     updaterWindow.mainProgress:setPercent(100)
     updaterWindow.downloadProgress:hide()
@@ -150,7 +149,7 @@ local function updateFiles(data, keepCurrentFiles)
     scheduledEvent = scheduleEvent(function()
       local restart = binary or (not loadModulesFunction and reloadModules) or forceRestart
       if newFiles then
-        g_resources.updateFiles(toUpdateFiles, not restart)
+        g_resources.updateData(toUpdateFiles, not restart)
       end
 
       if binary then
@@ -226,7 +225,7 @@ function Updater.check(args)
     if err then
       return Updater.error(err)
     end
-    updateData = data
+    updateData = data['files']
   end)
 end
 

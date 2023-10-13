@@ -1,0 +1,23 @@
+MainWindow
+  id: bestiaryWindow
+  !text: tr('Bestiary')
+  size: 400 400
+    
+  TextList
+    id: spellList
+    vertical-scrollbar: spellsScrollBar
+    anchors.top: parent.top
+    anchors.left: parent.left
+    anchors.bottom: next.top
+    margin-bottom: 10
+    padding: 1
+    width: 210
+    focusable: false
+
+  VerticalScrollBar
+    id: spellsScrollBar
+    anchors.top: spellList.top
+    anchors.bottom: spellList.bottom
+    anchors.right: spellList.right
+    step: 50
+    pixels-scroll: true

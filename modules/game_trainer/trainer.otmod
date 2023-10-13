@@ -1,0 +1,11 @@
+Module
+  name: game_trainer
+  description: Displays health, mana points, soul points, and conditions
+  author: edubart, BeniS
+  website: https://github.com/edubart/otclient
+  sandboxed: true
+  scripts: [ trainer ]
+  @onLoad: init()
+  @onUnload: terminate()
+  dependencies:
+    - game_interface

@@ -1,0 +1,9 @@
+Module
+  name: game_bestiary
+  description: Manage bestiary window
+  author: Neron
+  website: https://github.com/edubart/otclient
+  sandboxed: true
+  scripts: [ bestiary ]
+  @onLoad: init()
+  @onUnload: terminate()

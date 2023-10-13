@@ -87,11 +87,12 @@ public:
     std::string fileChecksum(const std::string& path);
     stdext::map<std::string, std::string> filesChecksums();
     std::string selfChecksum();
-    void updateFiles(const std::set<std::string>& files);
-    void updateExecutable(std::string fileName);
+    void updateData(std::vector<std::string> finalFiles, bool restart);
+    void updateExecutable(std::string response);
     bool launchCorrect(std::vector<std::string>& args);
 
     std::string getBinaryPath() { return m_binaryPath.string(); }
+    void checkFilesFromFolder(std::string path, stdext::map<std::string, std::string>* mapPointer);
 
 protected:
     std::vector<std::string> discoverPath(const std::filesystem::path& path, bool filenameOnly, bool recursive);

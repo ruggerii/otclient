@@ -80,11 +80,45 @@ PurseButton < Button
   icon-size: 24 24
   icon-offset: 1 1
 
+
+
+
+CombatBox < UICheckBox
+  size: 20 20
+  image-clip: 0 0 20 20
+  margin: 2 4
+
+  $checked:
+    image-clip: 0 20 20 20
+
+FightOffensiveBox < CombatBox
+  image-source: /images/game/combatmodes/fightoffensive
+FightBalancedBox < CombatBox
+  image-source: /images/game/combatmodes/fightbalanced
+FightDefensiveBox < CombatBox
+  image-source: /images/game/combatmodes/fightdefensive
+ChaseModeBox < CombatBox
+  image-source: /images/game/combatmodes/chasemode
+SafeFightBox < CombatBox
+  image-source: /images/game/combatmodes/safefight
+
+MountButton < CombatBox
+  image-source: /images/game/combatmodes/mount
+
+WhiteDoveBox < CombatBox
+  image-source: /images/game/combatmodes/whitedovemode
+WhiteHandBox < CombatBox
+  image-source: /images/game/combatmodes/whitehandmode
+YellowHandBox < CombatBox
+  image-source: /images/game/combatmodes/yellowhandmode
+RedFistBox < CombatBox
+  image-source: /images/game/combatmodes/redfistmode
+
 MiniWindow
   id: inventoryWindow
   !text: tr('Inventory')
   icon: /images/topbuttons/inventory
-  height: 175
+  height: 198
   @onOpen: modules.game_inventory.onMiniWindowOpen()
   @onClose: modules.game_inventory.onMiniWindowClose()
   &save: true
@@ -146,3 +180,33 @@ MiniWindow
       margin-top: 3
       anchors.top: prev.bottom
       anchors.horizontalCenter: prev.horizontalCenter
+    
+    HorizontalSeparator
+      id: separator
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: prev.bottom
+      margin-bottom: 10
+
+    FightOffensiveBox
+      id: fightOffensiveBox
+      anchors.top: separator.bottom
+      anchors.left: parent.left
+      margin: 2 1
+    FightBalancedBox
+      id: fightBalancedBox
+      anchors.top: separator.bottom
+      anchors.left: prev.right
+    FightDefensiveBox
+      id: fightDefensiveBox
+      anchors.left: prev.right
+      anchors.top: separator.bottom
+    ChaseModeBox
+      id: chaseModeBox
+      anchors.right: next.left
+      anchors.top: separator.bottom
+    SafeFightBox
+      id: safeFightBox
+      anchors.right: parent.right
+      anchors.top: separator.bottom
+      margin: 2 1

@@ -700,8 +700,8 @@ void Game::forceWalk(Otc::Direction direction)
 
 void Game::turn(Otc::Direction direction)
 {
-    if (!canPerformGameAction())
-        return;
+    //if (!canPerformGameAction())
+    //    return;
 
     switch (direction) {
         case Otc::North:
@@ -966,7 +966,8 @@ void Game::talk(const std::string_view message)
 
 void Game::talkChannel(Otc::MessageMode mode, int channelId, const std::string_view message)
 {
-    if (!canPerformGameAction() || message.empty())
+    //!canPerformGameAction() ||
+    if (message.empty())
         return;
 
     m_protocolGame->sendTalk(mode, channelId, "", message);
@@ -1102,9 +1103,11 @@ void Game::requestOutfit()
 
 void Game::changeOutfit(const Outfit& outfit)
 {
+    g_logger.info("canPerformGameAction()");
     if (!canPerformGameAction())
         return;
 
+    g_logger.info("send ChangeOutifit");
     m_protocolGame->sendChangeOutfit(outfit);
 }
 

@@ -15,6 +15,9 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GameLooktypeU16);
             g_game.enableFeature(GameMessageStatements);
             g_game.enableFeature(GameLoginPacketEncryption);
+            g_game.enableFeature(GameNewOutfitProtocol);
+            g_game.enableFeature(GamePlayerAddons);
+            -- g_game.enableFeature(GameSpellList);
         end
 
         if version >= 780 then
@@ -24,6 +27,7 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GameMessageLevel);
             g_game.enableFeature(GamePlayerStateU16);
             g_game.enableFeature(GameNewOutfitProtocol);
+            
         end
 
         if version >= 790 then

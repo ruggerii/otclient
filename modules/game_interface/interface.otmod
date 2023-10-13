@@ -1,6 +1,6 @@
 Module
   name: game_interface
-  description: Create the game interface, where the ingame stuff starts
+  description: Create the game interface, where the ingame stuff starts OBS: removed:    game_combatcontrols
   author: OTClient team
   website: https://github.com/edubart/otclient
   sandboxed: true
@@ -17,7 +17,6 @@ Module
     - game_healthinfo
     - game_skills
     - game_inventory
-    - game_combatcontrols
     - game_containers
     - game_viplist
     - game_battle
@@ -36,5 +35,6 @@ Module
     - game_unjustifiedpoints
     - game_shaders
     - game_attachedeffects
+    - game_trainer
   @onLoad: init()
   @onUnload: terminate()

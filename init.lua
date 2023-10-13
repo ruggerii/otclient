@@ -1,13 +1,16 @@
 -- this is the first file executed when the application starts
 -- we have to load the first modules form here
+-- set true so that modules are reloaded when modified. (Note: Use only dev mod)
+AUTO_RELOAD_MODULE = true
 
 -- updater
 Services = {
-    --updater = "http://localhost/api/updater.php",
+    -- updater = "http://localhost:3003/updater/64",
+    serverUrl = 'retroera.online'
 }
 
-g_app.setName("OTClient - Redemption");
-g_app.setCompactName("otclient");
+g_app.setName("Retroera");
+g_app.setCompactName("Retroera");
 g_app.setOrganizationName("otbr");
 
 g_app.hasUpdater = function()
@@ -44,7 +47,7 @@ g_resources.setupUserWriteDir(('%s/'):format(g_app.getCompactName()))
 g_resources.searchAndAddPackages('/', '.otpkg', true)
 
 -- load settings
-g_configs.loadSettings('/config.otml')
+g_configs.loadSettings('config.otml')
 
 g_modules.discoverModules()
 

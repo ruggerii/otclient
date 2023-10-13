@@ -1,0 +1,2 @@
+TrainerButton < CreatureButton
+  &isTrainerButton: true

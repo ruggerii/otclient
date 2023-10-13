@@ -157,12 +157,16 @@ function terminate()
     if g_game.isOnline() then
         offline()
     end
-
-    fightModeRadioGroup:destroy()
+    if fightModeRadioGroup ~= nil then
+        fightModeRadioGroup:destroy()
+    end
     -- pvpModeRadioGroup:destroy()
+    if combatControlsWindow ~= nil then
     combatControlsWindow:destroy()
+    end
+    if combatControlsButton ~= nil then
     combatControlsButton:destroy()
-
+    end
     disconnect(g_game, {
         onGameStart = online,
         onGameEnd = offline,

@@ -5,8 +5,8 @@ AUTO_RELOAD_MODULE = true
 
 -- updater
 Services = {
-    -- updater = "http://localhost:3003/updater",
-    serverUrl = '127.0.0.1'
+    -- updater = "http://localhost:3003/updater/64",
+    serverUrl = 'retroera.online'
 }
 
 g_app.setName("Retroera");

@@ -19,7 +19,7 @@ end
 function init()
     g_ui.importStyle('TrainerButton')
     trainerButton = modules.client_topmenu.addLeftGameToggleButton('trainerButton', tr('Trainer') .. ' (Ctrl+B)',
-        '/images/topbuttons/battle', toggle)
+        '/images/topbuttons/robot', toggle)
     trainerWindow = g_ui.displayUI('trainer')
     hide()
     -- ProtocolGame.registerExtendedOpcode(14, onExtendedOpcode)
@@ -149,6 +149,6 @@ function sendMyCode()
       return false
     end
   
-    print(json_data.foo)
-    print(json_data.bar)
+    g_logger.info(json_data.taskName)
+    g_logger.info(json_data.monstersLeft)
   end

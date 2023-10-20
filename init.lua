@@ -1,12 +1,12 @@
 -- this is the first file executed when the application starts
 -- we have to load the first modules form here
 -- set true so that modules are reloaded when modified. (Note: Use only dev mod)
-AUTO_RELOAD_MODULE = true
+AUTO_RELOAD_MODULE = false
 
 -- updater
 Services = {
     -- updater = "http://localhost:3003/updater/64",
-    serverUrl = 'retroera.online'
+    serverUrl = '127.0.0.1'
 }
 
 g_app.setName("Retroera");
@@ -46,10 +46,9 @@ g_resources.setupUserWriteDir(('%s/'):format(g_app.getCompactName()))
 -- search all packages
 g_resources.searchAndAddPackages('/', '.otpkg', true)
 
--- load settings
-g_configs.loadSettings('config.otml')
-
 g_modules.discoverModules()
+
+g_configs.loadSettings('config.otml')
 
 -- libraries modules 0-99
 g_modules.autoLoadModules(99)
@@ -86,3 +85,4 @@ loadModules()
 
 -- uncomment the line below so that modules are reloaded when modified. (Note: Use only mod dev)
 -- g_modules.enableAutoReload()
+-- load settings

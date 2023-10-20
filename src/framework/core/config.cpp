@@ -24,6 +24,7 @@
 #include "resourcemanager.h"
 #include <framework/otml/otml.h>
 
+
 Config::Config()
 {
     m_confsDoc = OTMLDocument::create();
@@ -34,7 +35,7 @@ bool Config::load(const std::string& file)
 {
     m_fileName = file;
 
-    if (!g_resources.fileExists(file))
+    if (!g_resources.fileExists(file)) 
         return false;
 
     try {

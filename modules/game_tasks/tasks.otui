@@ -38,7 +38,7 @@ SelectionButton < Panel
   UICreature
     id: creature
     anchors.centerIn: parent
-    size: 90 90
+    size: 50 50
     margin-bottom: 17
     phantom: true
     anchors.verticalCenter: prev.verticalCenter
@@ -70,6 +70,7 @@ SelectionButton < Panel
     text-align: center
     margin-top: 2
     text-wrap: true
+    size: 30 30
 
   Label
     id: rewardTaskPoints
@@ -139,10 +140,19 @@ MainWindow
   Label
     id: info
     anchors.top: separator.top
-    anchors.left: parent.left
+    anchors.left: next.right
     width: 140
     height: 45
     text-align: center
+    text-wrap: true
+
+  Label
+    id: taskPointsLabel
+    anchors.top: separator.top
+    anchors.left: parent.left
+    width: 140
+    height: 45
+    text-align: left
     text-wrap: true
 
   Button

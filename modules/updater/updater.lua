@@ -105,13 +105,13 @@ local function updateFiles(data, keepCurrentFiles)
 
   -- update binary
   local binary = nil
-  -- if type(data.binary) == "table" and data.binary.file:len() > 1 then
-  --   local selfChecksum = g_resources.selfChecksum()
-  --   if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
-  --     binary = data.binary.file
-  --     table.insert(toUpdate, { binary, data.binary.checksum })
-  --   end
-  -- end
+  if type(data.binary) == "table" and data.binary.file:len() > 1 then
+    local selfChecksum = g_resources.selfChecksum()
+    if selfChecksum:len() > 0 and selfChecksum ~= data.binary.checksum then
+      binary = data.binary.file
+      table.insert(toUpdate, { binary, data.binary.checksum })
+    end
+  end
 
   if #toUpdate == 0 then -- nothing to update
     updaterWindow.mainProgress:setPercent(100)

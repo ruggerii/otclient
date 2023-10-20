@@ -2,7 +2,7 @@ local window = nil
 local selectedEntry = nil
 local consoleEvent = nil
 local taskButton
-
+local playerTask = nil
 function init()
     connect(g_game, {
         onGameStart = onGameStart,
@@ -15,14 +15,14 @@ function init()
     g_keyboard.bindKeyDown('Ctrl+A', toggleWindow)
     g_keyboard.bindKeyDown('Escape', hideWindowzz)
 	taskButton = modules.client_topmenu.addLeftGameButton('taskButton', tr('Tasks'), '/modules/game_tasks/images/taskIcon', toggleWindow)
-    ProtocolGame.registerExtendedJSONOpcode(215, parseOpcode)
+    ProtocolGame.registerExtendedOpcode(215, parseOpcode)
 end
 
 function terminate()
     disconnect(g_game, {
         onGameEnd = destroy
     })
-    ProtocolGame.unregisterExtendedJSONOpcode(215, parseOpcode)
+    ProtocolGame.unregisterExtendedOpcode(215, parseOpcode)
     taskButton:destroy()
     destroy()
 end
@@ -173,41 +173,56 @@ function abort()
 end
 
 function updateTasks(data)
-    if (data['message']) then
-        return setTaskConsoleText(data['message'], data['color'])
+    decodedData = json.decode(data)
+    if(decodedData['message'] == 'reward') then
+        g_logger.info('true')
+        hideWindowzz()
+        return
+    end
+    if (decodedData['message']) then
+        return setTaskConsoleText(decodedData['message'], decodedData['color'])
     end
 
-    local selectionList = window.selectionList
-    selectionList.onChildFocusChange = onItemSelect
-    selectionList:destroyChildren()
+    window.taskPointsLabel:setText('Task Points: ' .. decodedData['playerTaskPoints'])
+
+    window.selectionList:destroyChildren()
+    playerTask = decodedData['playerTasks']
     local playerTaskIds = {}
-
-    for _, task in ipairs(data['playerTasks']) do
-        local button = g_ui.createWidget("SelectionButton", window.selectionList)
-        button:setId(task.id)
-        table.insert(playerTaskIds, task.id)
-        button.creature:setOutfit(task.looktype)
-        button.name:setText(task.name)
-        button.kills:setText('Kills: ' .. task.done .. '/' .. task.kills)
-        button.reward:setText('Reward: ' .. task.exp .. ' exp')
-        if not (task.taskPoints == nil) then
-          button.rewardTaskPoints:setText('Task Points: ' .. task.taskPoints .. '')
-        else
-          button.rewardTaskPoints:setText('Task Points: 0')
+    local selectionList = window.selectionList
+    if next(playerTask) ~= nil then
+        taskKillDone = 0
+        if decodedData['monstersLeft'] ~= playerTask.toKill then
+            taskKillDone = playerTask.toKill - decodedData['monstersLeft']
         end
-        local progress = 159 * task.done / task.kills
-        button.progress:setWidth(progress)
-        selectionList:focusChild(button)
+        selectionList.onChildFocusChange = onItemSelect
+        selectionList:destroyChildren()
+        
+            local button = g_ui.createWidget("SelectionButton", window.selectionList)
+            button:setId(playerTask.id)
+            table.insert(playerTaskIds, playerTask.id)
+            button.creature:setOutfit(playerTask.looktype)
+            button.name:setText(playerTask.name)
+            button.kills:setText('Kills: ' .. taskKillDone .. '/' .. playerTask.toKill)
+            button.reward:setText(playerTask.formatedTextReward)
+            if not (playerTask.taskPoints == nil) then
+                  button.rewardTaskPoints:setText('Task Points: ' .. playerTask.taskPoints .. '')
+                else
+                      button.rewardTaskPoints:setText('Task Points: 0')
+                    end
+                    local progress = 159 * taskKillDone / playerTask.toKill
+                    button.progress:setWidth(progress)
+                    selectionList:focusChild(button)
     end
 
-    for _, task in ipairs(data['allTasks']) do
+    for _, task in ipairs(decodedData['allTasks']) do
         if (not table.contains(playerTaskIds, task.id)) then
             local button = g_ui.createWidget("SelectionButton", window.selectionList)
+            
             button:setId(task.id)
             button.creature:setOutfit(task.looktype)
             button.name:setText(task.name)
-            button.kills:setText('Kills: ' .. task.kills)
-            button.reward:setText('Reward: ' .. task.exp .. ' exp')
+            button.kills:setText('Kills: ' .. task.toKill)
+            button.reward:setText(task.formatedTextReward)
             if not (task.taskPoints == nil) then
               button.rewardTaskPoints:setText('Task Points: ' .. task.taskPoints .. '')
             else
@@ -217,7 +232,7 @@ function updateTasks(data)
             selectionList:focusChild(button)
         end
     end
-
+    selectionList.onChildFocusChange = onItemSelect
     selectionList:focusChild(selectionList:getFirstChild())
     onFilterSearch()
 end
@@ -228,9 +243,9 @@ function toggleWindow()
     end
 
     if (window:isVisible()) then
-        sendOpcode({
-            action = 'hide'
-        })
+        -- sendOpcode({
+        --     action = 'hide'
+        -- })
         window:setVisible(false)
     else
         sendOpcode({
@@ -246,9 +261,9 @@ function hideWindowzz()
     end
 
     if (window:isVisible()) then
-        sendOpcode({
-            action = 'hide'
-        })
+        -- sendOpcode({
+        --     action = 'hide'
+        -- })
         window:setVisible(false)
     end
 end

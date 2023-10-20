@@ -84,14 +84,14 @@ bool ResourceManager::discoverWorkDir(const std::string& existentFile)
 
 bool ResourceManager::setupUserWriteDir(const std::string& appWriteDirName)
 {
-    const std::string userDir = getUserDir();
+    const std::string userDir = g_platform.getCurrentDir();//getUserDir();
     std::string dirName;
 #ifndef WIN32
     dirName = stdext::format(".%s", appWriteDirName);
 #else
     dirName = appWriteDirName;
 #endif
-    const std::string writeDir = userDir + dirName;
+    const std::string writeDir = userDir; //+ dirName;
 
     if (!PHYSFS_setWriteDir(writeDir.c_str())) {
         if (!PHYSFS_setWriteDir(userDir.c_str()) || !PHYSFS_mkdir(dirName.c_str())) {

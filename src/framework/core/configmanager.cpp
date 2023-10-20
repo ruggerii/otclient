@@ -21,6 +21,7 @@
  */
 
 #include "configmanager.h"
+#include "framework/core/graphicalapplication.h"
 
 ConfigManager g_configs;
 

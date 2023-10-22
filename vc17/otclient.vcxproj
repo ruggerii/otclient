@@ -528,7 +528,7 @@ cmd /c "start ../vcpkg_installed\$(VcpkgTriplet)\$(VcpkgTriplet)\tools\protobuf\
     <ClInclude Include="..\src\gitinfo.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\src\otcicon.rc" />
+    <ResourceCompile Include="..\src\retro.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

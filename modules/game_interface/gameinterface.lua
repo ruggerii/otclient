@@ -274,7 +274,7 @@ function show()
     updateStretchShrink()
     logoutButton:setTooltip(tr('Logout'))
 
-    setupViewMode(0)
+    setupViewMode(2)
     if g_app.isScaled() then
         setupViewMode(1)
         setupViewMode(2)
@@ -861,12 +861,12 @@ function createThingMenu(menuPosition, lookThing, useThing, creatureThing)
             end
         end
 
-        if modules.game_ruleviolation.hasWindowAccess() and creatureThing:isPlayer() then
-            menu:addSeparator()
-            menu:addOption(tr('Rule Violation'), function()
-                modules.game_ruleviolation.show(creatureThing:getName())
-            end)
-        end
+        -- if modules.game_ruleviolation.hasWindowAccess() and creatureThing:isPlayer() then
+        --     menu:addSeparator()
+        --     menu:addOption(tr('Rule Violation'), function()
+        --         modules.game_ruleviolation.show(creatureThing:getName())
+        --     end)
+        -- end
 
         menu:addSeparator()
         menu:addOption(tr('Copy Name'), function()

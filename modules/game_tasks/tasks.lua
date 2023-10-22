@@ -12,7 +12,7 @@ function init()
     window = g_ui.displayUI('tasks')
     window:setVisible(false)
 
-    g_keyboard.bindKeyDown('Ctrl+A', toggleWindow)
+    g_keyboard.bindKeyDown('Ctrl+T', toggleWindow)
     g_keyboard.bindKeyDown('Escape', hideWindowzz)
 	taskButton = modules.client_topmenu.addLeftGameButton('taskButton', tr('Tasks'), '/modules/game_tasks/images/taskIcon', toggleWindow)
     ProtocolGame.registerExtendedOpcode(215, parseOpcode)

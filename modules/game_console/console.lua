@@ -1187,12 +1187,12 @@ function processMessageMenu(mousePos, mouseButton, creatureName, text, label, ta
                 end
                 menu:addSeparator()
             end
-            if modules.game_ruleviolation.hasWindowAccess() then
-                menu:addOption(tr('Rule Violation'), function()
-                    modules.game_ruleviolation.show(creatureName, text:match('.+%:%s(.+)'))
-                end)
-                menu:addSeparator()
-            end
+            -- if modules.game_ruleviolation.hasWindowAccess() then
+            --     menu:addOption(tr('Rule Violation'), function()
+            --         modules.game_ruleviolation.show(creatureName, text:match('.+%:%s(.+)'))
+            --     end)
+            --     menu:addSeparator()
+            -- end
 
             menu:addOption(tr('Copy name'), function()
                 g_window.setClipboardText(creatureName)

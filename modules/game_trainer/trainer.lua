@@ -2,11 +2,26 @@ trainerButton = nil
 trainerWindow = nil
 checkboxStatus = false
 manaTraining = false
+autoEaterStatus = false
 antiIdleEvent = nil
 magicLevelTrainingEvent = nil
+autoEaterEvent = nil
 spellNameTextEdit = nil
 autoEatStatus = nil
-
+FOODS = {
+    3725,
+    3577, -- meat
+    3578, -- fish
+    3579, -- ham
+    3580, -- dragon ham
+    3582, -- bread
+    3583, -- brown bread
+    3595, -- carrot
+    3597, -- corn
+    3600,
+    3601,
+    3602,
+}
 player = nil
 function toggle() -- Close/Open the battle window or Pressing Ctrl + B
     if trainerButton:isOn() then
@@ -20,8 +35,10 @@ function init()
     g_ui.importStyle('TrainerButton')
     trainerButton = modules.client_topmenu.addLeftGameToggleButton('trainerButton', tr('Trainer') .. ' (Ctrl+B)',
         '/images/topbuttons/robot', toggle)
+    g_keyboard.bindKeyDown('Escape', hide)
     trainerWindow = g_ui.displayUI('trainer')
     hide()
+    
     -- ProtocolGame.registerExtendedOpcode(14, onExtendedOpcode)
 end
 
@@ -31,12 +48,7 @@ function show()
     trainerWindow:focus()
     -- trainerWindow:setup()
 
-    spellNameTextEdit = trainerWindow:recursiveGetChildById('spellNameTextEdit')
-    spellNameTextEdit:setOn(true)
-    spellNameTextEdit:focus()
-    spellNameTextEdit:setText('utevo lux')
     player = g_game.getLocalPlayer()
-
 end
 
 function hide()
@@ -56,6 +68,10 @@ function terminate()
         magicLevelTrainingEvent:cancel()
         magicLevelTrainingEvent = nil
     end
+    if autoEaterEvent ~= nil then
+        autoEaterEvent:cancel()
+        autoEaterEvent = nil
+    end
     -- ProtocolGame.unregisterExtendedOpcode(14, onExtendedOpcode)
 end
 
@@ -69,7 +85,6 @@ function changeStatus()
         antiIdleEvent:cancel()
         antiIdleEvent = nil
     end
-    -- sendMyCode()
 end
 
 function startAntiIdle()
@@ -120,35 +135,26 @@ function magLevelTrainer()
     end
 end
 
-function sendMyCode()
-    local myData = {
-      a = "string",
-      b = 123,
-      c = {
-        x = "string in table",
-        y = 456
-      }
-    }
-  
-    local protocolGame = g_game.getProtocolGame()
-    if protocolGame then
-      protocolGame:sendExtendedJSONOpcode(14, myData)
+  function startAutoEaterEvent() 
+    for k, v in pairs(FOODS) do
+        item = player:getItem(v)
+        if item ~= nil then
+            g_game.use(item)
+            break
+        end
     end
-  end
-  
-  function onExtendedOpcode(protocol, code, buffer)
-    local json_status, json_data =
-      pcall(
-      function()
-        return json.decode(buffer)
-      end
-    )
-  
-    if not json_status then
-      g_logger.error("[My Module] JSON error: " .. json_data)
-      return false
+    autoEaterEvent = scheduleEvent(startAutoEaterEvent, 60000)
+end
+
+function autoEater()
+        checkbox = trainerWindow:recursiveGetChildById('autoEatCheckBox')
+        autoEaterStatus = not autoEaterStatus
+        checkbox:setChecked(autoEaterStatus)
+    
+        if autoEaterStatus then
+            startAutoEaterEvent()
+        else
+            autoEaterEvent:cancel()
+            autoEaterEvent = nil
+        end
     end
-  
-    g_logger.info(json_data.taskName)
-    g_logger.info(json_data.monstersLeft)
-  end

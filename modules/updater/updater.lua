@@ -92,7 +92,7 @@ local function updateFiles(data, keepCurrentFiles)
       table.insert(finalFiles, file)
     end
   end 
-  g_logger.info('final files: ' .. dump(finalFiles))
+
   -- update files
   for file, checksum in pairs(data) do
     table.insert(finalFiles, file)
@@ -170,9 +170,13 @@ end
 
 -- public functions
 function Updater.init(loadModulesFunc)
-  g_logger.setOnLog(onLog)
-  loadModulesFunction = loadModulesFunc
-  Updater.check()
+  if pcall(Updater.check) then    
+    g_logger.setOnLog(onLog)
+    loadModulesFunction = loadModulesFunc
+    return true
+  else 
+    return false
+  end
 end
 
 function Updater.terminate()

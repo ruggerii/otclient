@@ -1066,7 +1066,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\src\otcicon.rc">
+    <ResourceCompile Include="..\src\retro.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

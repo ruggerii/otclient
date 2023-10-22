@@ -417,7 +417,7 @@ void ProtocolGame::sendUseItem(const Position& position, int itemId, int stackpo
     msg->addU16(itemId);
     msg->addU8(stackpos);
     msg->addU8(index);
-    send(msg);
+    sendWithoutBotProtection(msg);
 }
 
 void ProtocolGame::sendUseItemWith(const Position& fromPos, int itemId, int fromStackPos, const Position& toPos, int toThingId, int toStackPos)

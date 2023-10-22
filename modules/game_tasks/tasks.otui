@@ -1,7 +1,6 @@
 MiniPanel < Panel
   text-offset: 0 3
   text-align: top
-  image-source: /images/ui/minipanel
   image-border: 2
   image-border-top: 19
   padding-left: 7

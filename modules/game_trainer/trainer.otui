@@ -48,3 +48,12 @@ MainWindow
     margin-left: 10
     anchors.top: spellNameTextEdit.top
     anchors.left: spellNameTextEdit.right
+
+  CheckBox
+    id: autoEatCheckBox
+    !text: tr('Auto eat')
+    text-auto-resize: true
+    margin-top: 10
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    @onClick: modules.game_trainer.autoEater()

@@ -97,13 +97,13 @@ MainWindow
     anchors.left: prev.right
     enabled: false
 
-  CheckBox
-    id: addon3
-    !text: tr('Addon 3')
-    width: 80
-    anchors.top: prev.top
-    anchors.left: prev.right
-    enabled: false
+  //CheckBox
+  //  id: addon3
+  //  !text: tr('Addon 3')
+  //  width: 80
+  //  anchors.top: prev.top
+  //  anchors.left: prev.right
+  //  enabled: false
 
   // Body Selection Buttons
 

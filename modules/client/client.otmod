@@ -1,6 +1,6 @@
 Module
   name: client
-  description: Initialize the client and setups its main window
+  description: Initialize the client and setups its main window     - client_terminal
   author: edubart
   website: https://github.com/edubart/otclient
   reloadable: false

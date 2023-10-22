@@ -6,8 +6,10 @@ AUTO_RELOAD_MODULE = false
 -- updater
 Services = {
     -- updater = "http://localhost:3003/updater/64",
-    serverUrl = '127.0.0.1'
+    serverUrl = 'retroera.online'
 }
+
+g_configs.loadSettings('config.otml')
 
 g_app.setName("Retroera");
 g_app.setCompactName("Retroera");
@@ -48,8 +50,6 @@ g_resources.searchAndAddPackages('/', '.otpkg', true)
 
 g_modules.discoverModules()
 
-g_configs.loadSettings('config.otml')
-
 -- libraries modules 0-99
 g_modules.autoLoadModules(99)
 g_modules.ensureModuleLoaded('corelib')
@@ -78,10 +78,15 @@ end
 -- run updater, must use data.zip
 if g_app.hasUpdater() then
     g_modules.ensureModuleLoaded("updater")
-    return Updater.init(loadModules)
+    if not Updater.init(loadModules) then
+        g_logger.info('modules updated')
+    else
+        loadModules()
+    end
+else
+    loadModules()
 end
 
-loadModules()
 
 -- uncomment the line below so that modules are reloaded when modified. (Note: Use only mod dev)
 -- g_modules.enableAutoReload()

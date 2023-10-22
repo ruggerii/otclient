@@ -37,7 +37,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Client
 # *****************************************************************************
 if (MSVC)
-	add_executable(${PROJECT_NAME} "" ../cmake/icon/otcicon.rc)
+	add_executable(${PROJECT_NAME} "" ../cmake/icon/retro.rc)
 elseif(ANDROID)
 	add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 else()

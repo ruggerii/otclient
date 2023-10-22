@@ -787,8 +787,8 @@ void Game::wrap(const ThingPtr& thing)
 
 void Game::use(const ThingPtr& thing)
 {
-    if (!canPerformGameAction() || !thing)
-        return;
+    // if (!canPerformGameAction() || !thing)
+    //     return;
 
     Position pos = thing->getPosition();
     if (!pos.isValid()) // virtual item
@@ -1103,11 +1103,10 @@ void Game::requestOutfit()
 
 void Game::changeOutfit(const Outfit& outfit)
 {
-    g_logger.info("canPerformGameAction()");
+
     if (!canPerformGameAction())
         return;
 
-    g_logger.info("send ChangeOutifit");
     m_protocolGame->sendChangeOutfit(outfit);
 }
 

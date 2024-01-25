@@ -3,6 +3,10 @@ local selectedEntry = nil
 local consoleEvent = nil
 local taskButton
 local playerTask = nil
+local rewardSelected = nil
+
+taskListVisible = true
+
 function init()
     connect(g_game, {
         onGameStart = onGameStart,
@@ -11,7 +15,6 @@ function init()
 
     window = g_ui.displayUI('tasks')
     window:setVisible(false)
-
     g_keyboard.bindKeyDown('Ctrl+T', toggleWindow)
     g_keyboard.bindKeyDown('Escape', hideWindowzz)
 	taskButton = modules.client_topmenu.addLeftGameButton('taskButton', tr('Tasks'), '/modules/game_tasks/images/taskIcon', toggleWindow)
@@ -57,7 +60,7 @@ function sendOpcode(data)
     end
 end
 
-function onItemSelect(list, focusedChild, unfocusedChild, reason)
+function onTaskSelect(list, focusedChild, unfocusedChild, reason)
     if focusedChild then
         selectedEntry = tonumber(focusedChild:getId())
 
@@ -175,10 +178,14 @@ end
 function updateTasks(data)
     decodedData = json.decode(data)
     if(decodedData['message'] == 'reward') then
-        g_logger.info('true')
         hideWindowzz()
         return
     end
+
+    if (decodedData['rewardShopList'] ~= nil) then
+        getTaskStopRewards(decodedData['rewardShopList'])
+    end
+
     if (decodedData['message']) then
         return setTaskConsoleText(decodedData['message'], decodedData['color'])
     end
@@ -194,7 +201,7 @@ function updateTasks(data)
         if decodedData['monstersLeft'] ~= playerTask.toKill then
             taskKillDone = playerTask.toKill - decodedData['monstersLeft']
         end
-        selectionList.onChildFocusChange = onItemSelect
+        selectionList.onChildFocusChange = onTaskSelect
         selectionList:destroyChildren()
         
             local button = g_ui.createWidget("SelectionButton", window.selectionList)
@@ -211,13 +218,11 @@ function updateTasks(data)
                     end
                     local progress = 159 * taskKillDone / playerTask.toKill
                     button.progress:setWidth(progress)
-                    selectionList:focusChild(button)
     end
 
     for _, task in ipairs(decodedData['allTasks']) do
         if (not table.contains(playerTaskIds, task.id)) then
             local button = g_ui.createWidget("SelectionButton", window.selectionList)
-            
             button:setId(task.id)
             button.creature:setOutfit(task.looktype)
             button.name:setText(task.name)
@@ -232,7 +237,7 @@ function updateTasks(data)
             selectionList:focusChild(button)
         end
     end
-    selectionList.onChildFocusChange = onItemSelect
+    selectionList.onChildFocusChange = onTaskSelect
     selectionList:focusChild(selectionList:getFirstChild())
     onFilterSearch()
 end
@@ -243,14 +248,14 @@ function toggleWindow()
     end
 
     if (window:isVisible()) then
-        -- sendOpcode({
-        --     action = 'hide'
-        -- })
         window:setVisible(false)
     else
+        local children = window.selectionList:getChildren()
+       --if next(children) == nil then
         sendOpcode({
             action = 'info'
         })
+       -- end
         window:setVisible(true)
     end
 end
@@ -265,6 +270,7 @@ function hideWindowzz()
         --     action = 'hide'
         -- })
         window:setVisible(false)
+        window.claimReward:disable()
     end
 end
 
@@ -286,4 +292,78 @@ function setTaskConsoleText(text, color)
     end, 5000)
 
     return true
+end
+
+function showTaskShop()
+    window.selectionList:setVisible(false)
+    window.listSearch:setVisible(false)
+    window.rewardSelectionList:setVisible(true)
+    window.rewardSelectionScroll:setVisible(true)
+    window.claimReward:setVisible(true)
+    window.claimReward:disable()
+    -- window.rewardSelectionList:destroyChildren()
+end
+
+function showTaskList()
+    window.listSearch:setVisible(true)
+    window.selectionList:setVisible(true)
+    window.rewardSelectionList:setVisible(false)
+    window.rewardSelectionScroll:setVisible(false)
+    window.claimReward:setVisible(false)
+end
+
+
+function onRewardSelect(list, focusedChild, unfocusedChild, reason)
+    rewardSelected = tonumber(focusedChild:getId())
+    if rewardSelected then
+        if (not rewardSelected) then
+            return true
+        end
+
+        local children = window.rewardSelectionList:getChildren()
+
+        for _, child in ipairs(children) do
+            local id = tonumber(child:getId())
+            local formatedRewardTaskPoints = child.taskPoints:getText():gsub('taskPoints: ', "")
+            local formatedPlayerTaskPoints = window.taskPointsLabel:getText():gsub('Task Points: ', "")
+            local rewardTaskPoints = tonumber(formatedRewardTaskPoints)
+            local playerTaskPoints = tonumber(formatedPlayerTaskPoints)
+            if rewardSelected == id then
+                if playerTaskPoints < rewardTaskPoints then
+                    window.claimReward:disable()
+                else window.claimReward:enable()
+                end
+            end
+        end
+        end
+end
+
+function getTaskStopRewards(rewardShopList)
+    local rewardSelectionList = window.rewardSelectionList
+    local children = rewardSelectionList:getChildren()
+        if next(children) == nil  then
+            for i, reward in ipairs(rewardShopList) do
+                local button = g_ui.createWidget("RewardSelectionButton", window.rewardSelectionList)
+                button:setId(reward.id)
+                button.item:setItemId(reward.clientItemId)
+                button.count:setText(reward.itemCount .. 'x')
+                button.item:setItemCount(reward.itemCount)
+                button.name:setText(reward.text)
+                button.taskPoints:setText('taskPoints: ' .. reward.taskPoints)
+                if reward.tooltip then
+                    button:setTooltip(reward.tooltip)
+                end
+            end
+        end
+        rewardSelectionList:focusChild(nil)
+        rewardSelectionList.onChildFocusChange = onRewardSelect
+end
+
+function claimReward()
+    if rewardSelected then
+        sendOpcode({
+            action = 'claimReward',
+            entry = rewardSelected
+        })
+    end
 end

@@ -80,6 +80,74 @@ SelectionButton < Panel
     margin-top: 3
     text-wrap: true
 
+RewardSelectionButton < Panel
+  image-source: /images/ui/button
+  image-color: #dfdfdf
+  image-clip: 0 0 22 23
+  image-border: 3
+  border: 1 alpha
+  focusable: true
+  phantom: false
+  
+  $hover:
+    border: 1 white
+
+  $focus:
+    border: 1 white
+    image-color: #ffffff
+
+
+  Panel
+    id: progress
+    image-source: /images/ui/panel_flat
+    image-color: #00ff00
+    margin-left: 1
+    margin-top: 1
+    anchors.top: parent.top
+    anchors.left: parent.left
+    size: 159 158
+    visible: false
+
+  Item
+    id: item
+    anchors.centerIn: parent
+    size: 80 80
+    margin-bottom: 25
+    phantom: true
+    anchors.verticalCenter: prev.verticalCenter
+    virtual: true
+
+  Label
+    id: name
+    anchors.top: item.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    text-align: top
+    text-wrap: true
+    text-border: 5 black
+
+  Label
+    id: count
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    text-align: top
+    text-wrap: true
+    text-border: 5 black
+  
+  Label
+    id: taskPoints
+    anchors.top: prev.bottom
+    anchors.left: parent.left
+    anchors.right: parent.right
+    margin-top: 5
+    text-align: center
+    text-wrap: true
+    text-border: 5 black
+
+
 MainWindow
   size: 549 509
   id: tasksWindow
@@ -88,9 +156,35 @@ MainWindow
   @onEnter: modules.game_tasks.toggleWindow()
   @onEscape: modules.game_tasks.toggleWindow()
 
+
+  Button
+    id: toggleTaskList
+    anchors.top: parent.top
+    anchors.left: parent.left
+    text: Task List
+    width: 160
+    @onClick: modules.game_tasks.showTaskList()
+
+  Button
+    id: Bosses
+    anchors.top: parent.top
+    anchors.left: prev.right
+    anchors.right: next.left
+    text: Bosses
+    width: 160
+
+
+  Button
+    id: toggleTaskShop
+    anchors.top: parent.top
+    anchors.right: parent.right
+    text: Shop
+    width: 160
+    @onClick: modules.game_tasks.showTaskShop()
+
   MiniPanel
     id: listSearch
-    anchors.top: parent.top
+    anchors.top: prev.bottom
     anchors.left: parent.left
     anchors.right: parent.right
     margin-left: 5
@@ -117,8 +211,28 @@ MainWindow
     vertical-scrollbar: selectionScroll
     layout:
       type: grid
-      cell-size: 160 160
-      cell-spacing: 2
+      cell-size: 115 160
+      cell-spacing: 3
+      flow: true
+  
+  ScrollablePanel
+    id: rewardSelectionList
+    anchors.top: listSearch.bottom
+    anchors.left: listSearch.left
+    anchors.right: parent.right
+    anchors.bottom: separator.top
+    margin-top: 5
+    margin-bottom: 5
+    image-source: /images/ui/panel_flat
+    image-border: 1
+    padding: 4
+    padding-right: 16
+    vertical-scrollbar: rewardSelectionScroll
+    visible: false
+    layout:
+      type: grid
+      cell-size: 115 160
+      cell-spacing: 3
       flow: true
 
   VerticalScrollBar
@@ -128,6 +242,15 @@ MainWindow
     anchors.bottom: prev.bottom
     step: 80
     pixel-scroll: true
+
+  VerticalScrollBar
+    id: rewardSelectionScroll
+    anchors.top: prev.top
+    anchors.right: prev.right
+    anchors.bottom: prev.bottom
+    step: 80
+    pixel-scroll: true
+    visible: false
 
   HorizontalSeparator
     id: separator
@@ -189,9 +312,13 @@ MainWindow
     margin-right: 5
     @onClick: modules.game_tasks.abort()
 
-  ResizeBorder
-    anchors.right: parent.right
-    anchors.top: parent.top
+
+  Button
+    id: claimReward
     anchors.bottom: parent.bottom
-    enabled: true
-    minimum: 190
+    anchors.right: toggleButton.left
+    text: Claim
+    width: 55
+    margin-right: 5
+    visible: false
+    @onClick: modules.game_tasks.claimReward()

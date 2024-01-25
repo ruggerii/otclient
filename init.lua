@@ -1,12 +1,12 @@
 -- this is the first file executed when the application starts
 -- we have to load the first modules form here
 -- set true so that modules are reloaded when modified. (Note: Use only dev mod)
-AUTO_RELOAD_MODULE = false
+AUTO_RELOAD_MODULE = true
 
 -- updater
 Services = {
     -- updater = "http://localhost:3003/updater/64",
-    serverUrl = 'retroera.online'
+    serverUrl = '127.0.0.1'
 }
 
 g_configs.loadSettings('config.otml')

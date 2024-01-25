@@ -18,6 +18,8 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GameNewOutfitProtocol);
             g_game.enableFeature(GamePlayerAddons);
             -- g_game.enableFeature(GameSpellList);
+            g_game.enableFeature(GamePlayerStamina);
+            
         end
 
         if version >= 780 then

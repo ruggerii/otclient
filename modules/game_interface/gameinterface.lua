@@ -274,7 +274,7 @@ function show()
     updateStretchShrink()
     logoutButton:setTooltip(tr('Logout'))
 
-    setupViewMode(2)
+    setupViewMode(0)
     if g_app.isScaled() then
         setupViewMode(1)
         setupViewMode(2)

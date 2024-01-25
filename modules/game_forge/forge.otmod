@@ -1,0 +1,8 @@
+Module
+  name: game_forge
+  description: DisplaysForge System
+  author: Neron
+  sandboxed: true
+  scripts: [ forge ]
+  @onLoad: init()
+  @onUnload: terminate()

@@ -36,5 +36,6 @@ Module
     - game_attachedeffects
     - game_trainer
     - game_tasks
+    - game_forge
   @onLoad: init()
   @onUnload: terminate()

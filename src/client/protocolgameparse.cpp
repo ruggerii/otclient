@@ -41,11 +41,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
 {
     int opcode = -1;
     int prevOpcode = -1;
-
     try {
         while (!msg->eof()) {
             opcode = msg->getU8();
-
             // must be > so extended will be enabled before GameStart.
             if (!g_game.getFeature(Otc::GameLoginPending)) {
                 if (!m_gameInitialized && opcode > Proto::GameServerFirstGameOpcode) {
@@ -2471,7 +2469,9 @@ void ProtocolGame::parseModalDialog(const InputMessagePtr& msg)
 void ProtocolGame::parseExtendedOpcode(const InputMessagePtr& msg)
 {
     const uint8_t opcode = msg->getU8();
+    g_logger.info(stdext::format("opcode: %d", opcode));
     const auto& buffer = msg->getString();
+
 
     if (opcode == 0)
         m_enableSendExtendedOpcode = true;

@@ -1,0 +1,26 @@
+
+
+
+
+MainWindow
+  size: 549 509
+  id: forgeWindow
+  !text: tr('Forge')
+
+  @onEnter: modules.game_forge.toggleWindow()
+  @onEscape: modules.game_forge.toggleWindow()
+  
+  Button
+    id: toggleButton
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    text: Close
+    width: 65
+    @onClick: modules.game_forge.toggleWindow()
+
+  Item
+    id: item
+    anchors.centerIn: parent
+    size: 80 80
+    margin-bottom: 17
+    anchors.verticalCenter: parent.verticalCenter

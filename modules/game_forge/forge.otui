@@ -3,13 +3,65 @@
 
 
 MainWindow
-  size: 549 509
+  size: 549 300
   id: forgeWindow
   !text: tr('Forge')
 
   @onEnter: modules.game_forge.toggleWindow()
   @onEscape: modules.game_forge.toggleWindow()
+
+
+  Label
+    id: item1Label
+    anchors.top: item.bottom
+    anchors.left: parent.left
+    text: Refin Item
+    text-align: right
+
+  Item
+    id: item
+    anchors.top: parent.top
+    anchors.left: parent.left
+    size: 65 65
   
+  Label
+    id: item2Label
+    anchors.right: parent.right
+    anchors.top: item2.bottom
+    text: Boost Item
+    text-align: center
+
+  Item
+    id: item2
+    anchors.top: parent.top
+    anchors.right: parent.right
+    size: 60 60
+  
+  Label
+    id: item3Label
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.top: item3.bottom
+    text: Weapon/Armor
+    text-align: center
+
+  Item
+    id: item3
+    anchors.top: item2.bottom
+    anchors.right: parent.right
+    anchors.horizontalCenter: parent.horizontalCenter
+    margin-top: 5
+    size: 60 60
+
+
+  Button
+    id: forge
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    anchors.horizontalCenter: parent.horizontalCenter
+    text: Forge
+    width: 65
+    @onClick: modules.game_forge.toggleWindow()
+
   Button
     id: toggleButton
     anchors.bottom: parent.bottom
@@ -17,10 +69,3 @@ MainWindow
     text: Close
     width: 65
     @onClick: modules.game_forge.toggleWindow()
-
-  Item
-    id: item
-    anchors.centerIn: parent
-    size: 80 80
-    margin-bottom: 17
-    anchors.verticalCenter: parent.verticalCenter

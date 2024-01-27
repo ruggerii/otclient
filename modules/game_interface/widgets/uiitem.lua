@@ -46,7 +46,6 @@ function UIItem:onDrop(widget, mousePos)
         if pressedWidget and rootWidget then
             local parentWidget = pressedWidget:getParent()
             local mousePosWidget = g_ui.getRootWidget():recursiveGetChildByPos(mousePos, false)
-            g_logger.info('parentWidget:getId()' .. parentWidget:getId())
             if parentWidget and mousePosWidget then
                 local mousePosWidgetParent = mousePosWidget:getParent()
                 if mousePosWidgetParent and mousePosWidgetParent:getId() == 'actionBarPanel' then
@@ -56,7 +55,7 @@ function UIItem:onDrop(widget, mousePos)
                         modules.game_actionbar.onChooseItemByDrag(self, mousePos, item)
                     end
                 elseif mousePosWidgetParent and mousePosWidgetParent:getId() == 'forgeWindow' then
-                    modules.game_forge.onChooseItemByDrag(self, mousePos, item)
+                    modules.game_forge.onChooseItemByDrag(self, mousePos, item, mousePosWidget:getId())
                 end
             end
         end

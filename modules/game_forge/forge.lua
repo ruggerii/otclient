@@ -49,8 +49,9 @@ function hideWindow()
     window.item:setItemId(nil)
 end
 
-function onChooseItemByDrag(self, mousePos, item)
+function onChooseItemByDrag(self, mousePos, item, widgetId)
     g_logger.info('onChooseItemByDrag ' .. dump(item))
-    window.item:setItemId(item:getId())
+    g_logger.info('mousePos ' .. dump(mousePos))
+    window[widgetId]:setItemId(item:getId())
     
 end

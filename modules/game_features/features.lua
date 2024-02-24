@@ -19,7 +19,8 @@ controller:registerEvents(g_game, {
             g_game.enableFeature(GamePlayerAddons);
             -- g_game.enableFeature(GameSpellList);
             g_game.enableFeature(GamePlayerStamina);
-            
+            g_game.enableFeature(GameIdleAnimations)
+            g_game.enableFeature(GamePlayerMounts);
         end
 
         if version >= 780 then
